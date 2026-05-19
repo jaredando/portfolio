@@ -2,16 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Jared in Tech</title>
-  
-  <!-- Tailwind CSS -->
+
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Babel for compiling React JSX in the browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- Import Map to resolve our React and Framer Motion dependencies -->
+
   <script type="importmap">
     {
       "imports": {
@@ -24,187 +20,577 @@
   </script>
 
   <style>
-    body {
+    html, body {
       margin: 0;
       background-color: #050505;
       overflow-x: hidden;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
     }
+    /* Hint GPU for the card stage */
+    .card-stage { will-change: transform; transform: translateZ(0); }
+    .card-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    /* Disable native scroll/zoom on the deck so scrubbing works on mobile */
+    .deck-touch { touch-action: none; }
   </style>
 </head>
 <body class="text-zinc-100 antialiased selection:bg-zinc-800 selection:text-white">
-  
+
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    import React, { useState, useEffect } from "react";
+    import React, { useState, useEffect, useRef, useCallback, memo } from "react";
     import { createRoot } from "react-dom/client";
     import { motion, AnimatePresence } from "framer-motion";
-    import { Github, ExternalLink, X, ChevronRight, Layers } from "lucide-react";
+    import { Github, ExternalLink, X, ChevronRight, Layers, ArrowUpRight } from "lucide-react";
 
-const projects = [
-  {
-    id: "project-1",
-    title: "Team Sheet",
-    role: "Creator",
-    face: "♠ A",
-    color: "#22c55e",
-    tech: ["HTML5", "SVG", "JavaScript", "npoint.io"],
-    preview: "https://images.unsplash.com/photo-1518604666860-9ed391f76460?q=80&w=1000&auto=format&fit=crop",
-    desc: "Drag-and-drop AFL team selection board with an SVG oval, magnet-style player tokens, multi-board persistence and coach access. Built for fast match-day selection on mobile.",
-    repo: "github.com/jaredando/AFLselector",
-    live: "jaredando.github.io/AFLselector/"
-  },
-  {
-    id: "project-2",
-    title: "Outsider",
-    role: "Creator",
-    face: "♥ K",
-    color: "#ef4444",
-    tech: ["HTML5", "JavaScript", "Anthropic API", "Gemini API"],
-    preview: "https://images.unsplash.com/photo-1606159068539-43f36b99d1b2?q=80&w=1000&auto=format&fit=crop",
-    desc: "Spyfall-meets-mafia party game with Locations, TV, Movies and AI modes. Hold-to-peek card reveal, timer, voting flow and an AI mode that generates any scenario on demand.",
-    repo: "github.com/jaredando/Outsider",
-    live: "jaredando.github.io/Outsider"
-  },
-  {
-    id: "project-3",
-    title: "Invoicer",
-    role: "Creator",
-    face: "♣ Q",
-    color: "#0ea5e9",
-    tech: ["HTML5", "JavaScript", "PDF Export", "LocalStorage"],
-    preview: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1000&auto=format&fit=crop",
-    desc: "Zero-friction invoicing for Australian sole traders. Saved profiles, client book, BSB/ABN fields, line items and one-click PDF export — entirely client-side, no signup.",
-    repo: "github.com/jaredando/soletrader",
-    live: "jaredando.github.io/soletrader"
-  },
-  {
-    id: "project-4",
-    title: "Squadlogic",
-    role: "Creator",
-    face: "♦ J",
-    color: "#f59e0b",
-    tech: ["HTML5", "JavaScript", "CSS"],
-    preview: "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=1000&auto=format&fit=crop",
-    desc: "Squad management and game-day logic tool for AFL coaches.",
-    repo: "github.com/jaredando/Squadlogic",
-    live: "jaredando.github.io/Squadlogic"
-  }
-];
+    const projects = [
+      {
+        id: "project-1",
+        title: "Team Sheet",
+        role: "Creator",
+        face: "♠ A",
+        color: "#22c55e",
+        tech: ["HTML5", "SVG", "JavaScript", "npoint.io"],
+        preview: "https://images.unsplash.com/photo-1518604666860-9ed391f76460?q=80&w=1000&auto=format&fit=crop",
+        desc: "Drag-and-drop AFL team selection board with an SVG oval, magnet-style player tokens, multi-board persistence and coach access. Built for fast match-day selection on mobile.",
+        repo: "github.com/jaredando/AFLselector",
+        live: "jaredando.github.io/AFLselector/"
+      },
+      {
+        id: "project-2",
+        title: "Outsider",
+        role: "Creator",
+        face: "♥ K",
+        color: "#ef4444",
+        tech: ["HTML5", "JavaScript", "Anthropic API", "Gemini API"],
+        preview: "https://images.unsplash.com/photo-1606159068539-43f36b99d1b2?q=80&w=1000&auto=format&fit=crop",
+        desc: "Spyfall-meets-mafia party game with Locations, TV, Movies and AI modes. Hold-to-peek card reveal, timer, voting flow and an AI mode that generates any scenario on demand.",
+        repo: "github.com/jaredando/Outsider",
+        live: "jaredando.github.io/Outsider"
+      },
+      {
+        id: "project-3",
+        title: "Invoicer",
+        role: "Creator",
+        face: "♣ Q",
+        color: "#0ea5e9",
+        tech: ["HTML5", "JavaScript", "PDF Export", "LocalStorage"],
+        preview: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1000&auto=format&fit=crop",
+        desc: "Zero-friction invoicing for Australian sole traders. Saved profiles, client book, BSB/ABN fields, line items and one-click PDF export — entirely client-side, no signup.",
+        repo: "github.com/jaredando/soletrader",
+        live: "jaredando.github.io/soletrader"
+      },
+      {
+        id: "project-4",
+        title: "Squadlogic",
+        role: "Creator",
+        face: "♦ J",
+        color: "#f59e0b",
+        tech: ["HTML5", "JavaScript", "CSS"],
+        preview: "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=1000&auto=format&fit=crop",
+        desc: "Squad management and game-day logic tool for AFL coaches.",
+        repo: "github.com/jaredando/Squadlogic",
+        live: "jaredando.github.io/Squadlogic"
+      }
+    ];
 
+    // ──────────────────────────────────────────────────────────────────────
+    // Card — memoized so a hover change only re-renders the affected cards
+    // ──────────────────────────────────────────────────────────────────────
+    const Card = memo(function Card({
+      project, index, centerIndex, totalCards,
+      isSelected, isHovered, isDeckFanned, isTouchDevice,
+      onPointerDown, onClick, onMouseEnter,
+      cardWidth, cardHeight, fanOffsetX
+    }) {
+      const offset = index - centerIndex;
+      let rotateZ = offset * 2;
+      let x = offset * 2;
+      let y = Math.abs(offset) * 1;
+      let zIndex = totalCards - Math.abs(offset);
+      if (isDeckFanned) {
+        rotateZ = offset * 6;
+        x = offset * fanOffsetX;
+        y = Math.abs(offset) * 6;
+      }
+      if (isHovered) {
+        rotateZ = 0;
+        y = -90;
+        zIndex = 100;
+      }
+
+      const [symbol, rank] = project.face.split(' ');
+
+      return (
+        <motion.div
+          data-card-id={project.id}
+          className="absolute top-1/2 left-1/2 cursor-pointer card-stage"
+          style={{
+            width: cardWidth,
+            height: cardHeight,
+            marginTop: -cardHeight / 2,
+            marginLeft: -cardWidth / 2,
+            transformOrigin: "bottom center"
+          }}
+          initial={false}
+          animate={{
+            rotateZ: isSelected ? 0 : rotateZ,
+            y: isSelected ? 0 : y,
+            x: isSelected ? 0 : x,
+            scale: isHovered && !isSelected ? 1.04 : 1,
+            opacity: isSelected ? 0 : 1,
+            zIndex
+          }}
+          transition={{ type: "spring", stiffness: 380, damping: 32, mass: 0.7 }}
+          onMouseEnter={onMouseEnter}
+          onPointerDown={onPointerDown}
+          onClick={onClick}
+          layoutId={`card-container-${project.id}`}
+        >
+          <motion.div
+            className="w-full h-full relative"
+            style={{ transformStyle: "preserve-3d" }}
+            animate={{ rotateY: isHovered && !isSelected ? 180 : 0 }}
+            transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+          >
+            {/* FRONT */}
+            <div
+              className="card-face absolute inset-0 w-full h-full bg-[#111] rounded-2xl overflow-hidden flex flex-col justify-between p-5"
+              style={{
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 14px 28px rgba(0,0,0,0.45)"
+              }}
+            >
+              <div
+                className="absolute inset-0 opacity-10 blur-2xl"
+                style={{ backgroundColor: project.color }}
+              />
+              <div className="flex justify-between items-start z-10">
+                <div className="flex flex-col items-center">
+                  <span className="text-2xl font-bold text-zinc-200">{rank}</span>
+                  <span className="text-xl" style={{ color: project.color }}>{symbol}</span>
+                </div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center z-0">
+                <span
+                  className="text-8xl opacity-[0.06]"
+                  style={{ color: project.color }}
+                >
+                  {symbol}
+                </span>
+              </div>
+              <div className="flex justify-between items-end rotate-180 z-10">
+                <div className="flex flex-col items-center">
+                  <span className="text-2xl font-bold text-zinc-200">{rank}</span>
+                  <span className="text-xl" style={{ color: project.color }}>{symbol}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* BACK — only paint when hovered to avoid wasted layers */}
+            {(isHovered || isSelected) && (
+              <div
+                className="card-face absolute inset-0 w-full h-full bg-zinc-900 rounded-2xl overflow-hidden"
+                style={{
+                  transform: "rotateY(180deg)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  boxShadow: "0 14px 28px rgba(0,0,0,0.45)"
+                }}
+              >
+                <img
+                  src={project.preview}
+                  alt={project.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover opacity-70 scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-end p-5">
+                  <h3 className="text-lg font-bold text-white mb-1 leading-tight">{project.title}</h3>
+                  <p className="text-xs text-zinc-400 font-mono uppercase tracking-wider flex items-center gap-1">
+                    {isTouchDevice ? "Tap to open" : "Click to open"} <ChevronRight size={12} />
+                  </p>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      );
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // PortfolioDeck
+    // ──────────────────────────────────────────────────────────────────────
     function PortfolioDeck() {
       const [selectedId, setSelectedId] = useState(null);
       const [hoveredId, setHoveredId] = useState(null);
       const [isDeckFanned, setIsDeckFanned] = useState(false);
       const [isPlayingDemo, setIsPlayingDemo] = useState(false);
+      const [iframeBlocked, setIframeBlocked] = useState(false);
+      const [iframeLoaded, setIframeLoaded] = useState(false);
+      const [isTouchDevice, setIsTouchDevice] = useState(false);
+      const [viewport, setViewport] = useState({ w: typeof window !== "undefined" ? window.innerWidth : 1200 });
 
+      // Refs
+      const suppressFanUntilRef = useRef(0); // cooldown after closing modal
+      const touchRef = useRef({ startX: 0, startY: 0, focusedId: null, isScrubbing: false });
+      const iframeWatchdogRef = useRef(null);
+
+      // Detect touch / viewport
+      useEffect(() => {
+        const mq = window.matchMedia('(hover: none), (pointer: coarse)');
+        const update = () => setIsTouchDevice(mq.matches);
+        update();
+        mq.addEventListener?.('change', update);
+        const onResize = () => setViewport({ w: window.innerWidth });
+        window.addEventListener('resize', onResize);
+        return () => {
+          mq.removeEventListener?.('change', update);
+          window.removeEventListener('resize', onResize);
+        };
+      }, []);
+
+      // Lock body scroll while modal is open
       useEffect(() => {
         if (selectedId) {
           document.body.style.overflow = "hidden";
+          setIsPlayingDemo(false);
+          setIframeBlocked(false);
+          setIframeLoaded(false);
         } else {
           document.body.style.overflow = "auto";
-          setIsPlayingDemo(false);
         }
         return () => { document.body.style.overflow = "auto"; };
       }, [selectedId]);
 
+      // Iframe watchdog — many sites block embedding via X-Frame-Options /
+      // frame-ancestors CSP. Onerror doesn't fire reliably; instead we time it.
+      useEffect(() => {
+        if (!isPlayingDemo) return;
+        setIframeLoaded(false);
+        setIframeBlocked(false);
+        clearTimeout(iframeWatchdogRef.current);
+        iframeWatchdogRef.current = setTimeout(() => {
+          // If still not loaded after 4s, treat as blocked
+          if (!iframeLoaded) setIframeBlocked(true);
+        }, 4000);
+        return () => clearTimeout(iframeWatchdogRef.current);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [isPlayingDemo]);
+
+      // ─── Mouse / hover handlers ────────────────────────────────────────
+      const handleDeckMouseEnter = useCallback(() => {
+        if (isTouchDevice) return;
+        if (Date.now() < suppressFanUntilRef.current) return; // post-close cooldown
+        setIsDeckFanned(true);
+      }, [isTouchDevice]);
+
+      const handleDeckMouseLeave = useCallback(() => {
+        if (isTouchDevice) return;
+        setIsDeckFanned(false);
+        setHoveredId(null);
+      }, [isTouchDevice]);
+
+      const handleCardMouseEnter = useCallback((id) => {
+        if (isTouchDevice) return;
+        setHoveredId(id);
+      }, [isTouchDevice]);
+
+      // ─── Pointer (touch) handlers — scrub vs tap ───────────────────────
+      // On touch devices the deck is auto-fanned. Pressing a card lifts it.
+      // Drag horizontally to scrub the lifted card across the fan. A drag of
+      // >8px disables the tap-to-open on release.
+      const handleCardPointerDown = useCallback((e, id) => {
+        if (e.pointerType === 'mouse') return;
+        touchRef.current = {
+          startX: e.clientX,
+          startY: e.clientY,
+          focusedId: id,
+          isScrubbing: false
+        };
+        setHoveredId(id);
+      }, []);
+
+      useEffect(() => {
+        if (!isTouchDevice) return;
+
+        const onMove = (e) => {
+          if (!touchRef.current.focusedId) return;
+          const dx = Math.abs(e.clientX - touchRef.current.startX);
+          const dy = Math.abs(e.clientY - touchRef.current.startY);
+          if (!touchRef.current.isScrubbing && (dx > 8 || dy > 8)) {
+            touchRef.current.isScrubbing = true;
+          }
+          if (touchRef.current.isScrubbing) {
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const cardEl = el && el.closest && el.closest('[data-card-id]');
+            if (cardEl) {
+              const newId = cardEl.dataset.cardId;
+              setHoveredId(prev => prev === newId ? prev : newId);
+            }
+          }
+        };
+
+        const onUp = () => {
+          const { focusedId, isScrubbing } = touchRef.current;
+          if (!focusedId) return;
+          if (!isScrubbing) {
+            // pure tap — open whichever card is currently lifted
+            setHoveredId(currentHovered => {
+              const targetId = currentHovered || focusedId;
+              setSelectedId(targetId);
+              return currentHovered;
+            });
+          }
+          touchRef.current = { startX: 0, startY: 0, focusedId: null, isScrubbing: false };
+        };
+
+        window.addEventListener('pointermove', onMove, { passive: true });
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+        return () => {
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          window.removeEventListener('pointercancel', onUp);
+        };
+      }, [isTouchDevice]);
+
+      // ─── Close modal ───────────────────────────────────────────────────
+      const closeModal = useCallback(() => {
+        setSelectedId(null);
+        setHoveredId(null);
+        setIsDeckFanned(false);
+        // Suppress the auto-fan for 700ms so the deck doesn't immediately
+        // open back up while the cursor is still over it.
+        suppressFanUntilRef.current = Date.now() + 700;
+      }, []);
+
+      // ─── Sizing ────────────────────────────────────────────────────────
+      const isNarrow = viewport.w < 640;
+      const cardWidth = isNarrow ? 180 : 260;
+      const cardHeight = isNarrow ? 260 : 380;
+      const fanOffsetX = isNarrow ? 48 : 65;
+      const stageHeight = isNarrow ? 380 : 500;
+
+      // On touch devices, deck is permanently fanned for discoverability
+      const deckFannedEffective = isTouchDevice || isDeckFanned;
+
       return (
         <div className="min-h-screen w-full bg-[#050505] flex flex-col items-center justify-center relative overflow-hidden font-sans">
+
+          {/* Background ambience */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-zinc-800/20 blur-[120px]" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-zinc-800/10 blur-[100px]" />
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
           </div>
 
-          <div className="absolute top-8 left-8 z-30 pointer-events-none flex items-center gap-3">
+          {/* Header */}
+          <div className="absolute top-6 left-6 md:top-8 md:left-8 z-30 pointer-events-none flex items-center gap-3">
             <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center shadow-xl">
               <Layers size={20} className="text-zinc-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-white leading-none">Jared in Tech</h1>
-              <p className="text-xs text-zinc-500 font-mono tracking-widest uppercase mt-1">Portfolio '26</p>
+              <h1 className="text-lg md:text-xl font-bold tracking-tight text-white leading-none">Jared in Tech</h1>
+              <p className="text-[10px] md:text-xs text-zinc-500 font-mono tracking-widest uppercase mt-1">Portfolio '26</p>
             </div>
           </div>
 
-          <div 
-            className="relative z-20 w-full max-w-[1200px] mx-auto flex items-center justify-center"
-            style={{ height: 500, perspective: 1200 }}
-            onMouseEnter={() => setIsDeckFanned(true)}
-            onMouseLeave={() => {
-              setIsDeckFanned(false);
-              setHoveredId(null);
-            }}
-          >
-            {projects.map((project, index) => {
-              const isSelected = selectedId === project.id;
-              const isHovered = hoveredId === project.id;
-              const totalCards = projects.length;
-              const centerIndex = (totalCards - 1) / 2;
-              const offset = index - centerIndex;
-              let rotateZ = offset * 2;
-              let x = offset * 2;
-              let y = Math.abs(offset) * 1;
-              let zIndex = totalCards - Math.abs(offset); 
-              if (isDeckFanned) { rotateZ = offset * 6; x = offset * 65; y = Math.abs(offset) * 6; }
-              if (isHovered) { rotateZ = 0; y = -90; zIndex = 100; }
+          {/* Mobile hint */}
+          {isTouchDevice && !selectedId && (
+            <p className="absolute bottom-6 left-0 right-0 z-20 text-center text-[11px] font-mono uppercase tracking-widest text-zinc-500 px-6 pointer-events-none">
+              Drag across cards to focus · release to open
+            </p>
+          )}
 
-              return (
-                <motion.div
-                  key={project.id}
-                  layoutId={`card-container-${project.id}`}
-                  className="absolute top-1/2 left-1/2 cursor-pointer"
-                  style={{ width: 260, height: 380, marginTop: -190, marginLeft: -130, transformOrigin: "bottom center" }}
-                  initial={{ rotateZ: offset * 2, y: Math.abs(offset) * 2, x: offset * 4, zIndex }}
-                  animate={{ rotateZ: isSelected ? 0 : rotateZ, y: isSelected ? 0 : y, x: isSelected ? 0 : x, scale: isHovered && !isSelected ? 1.05 : 1, opacity: isSelected ? 0 : 1, zIndex }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25, mass: 1.2 }}
-                  onMouseEnter={() => setHoveredId(project.id)}
-                  onClick={() => setSelectedId(project.id)}
-                >
-                  <motion.div className="w-full h-full relative" style={{ transformStyle: "preserve-3d" }} animate={{ rotateY: isHovered && !isSelected ? 180 : 0 }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}>
-                    <div className="absolute inset-0 w-full h-full bg-[#111] rounded-2xl overflow-hidden flex flex-col justify-between p-5" style={{ backfaceVisibility: "hidden", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "inset 0 0 20px rgba(255,255,255,0.02), 0 20px 40px rgba(0,0,0,0.5)" }}>
-                      <div className="absolute inset-0 opacity-10 blur-2xl transition-opacity duration-300" style={{ backgroundColor: project.color }} />
-                      <div className="flex justify-between items-start z-10"><div className="flex flex-col items-center"><span className="text-2xl font-bold text-zinc-200">{project.face.split(' ')[1]}</span><span className="text-xl" style={{ color: project.color }}>{project.face.split(' ')[0]}</span></div></div>
-                      <div className="absolute inset-0 flex items-center justify-center z-0"><span className="text-8xl opacity-5 drop-shadow-2xl" style={{ color: project.color, filter: `drop-shadow(0 0 20px ${project.color})` }}>{project.face.split(' ')[0]}</span></div>
-                      <div className="flex justify-between items-end rotate-180 z-10"><div className="flex flex-col items-center"><span className="text-2xl font-bold text-zinc-200">{project.face.split(' ')[1]}</span><span className="text-xl" style={{ color: project.color }}>{project.face.split(' ')[0]}</span></div></div>
-                    </div>
-                    <div className="absolute inset-0 w-full h-full bg-zinc-900 rounded-2xl overflow-hidden" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
-                      <img src={project.preview} alt={project.title} className="w-full h-full object-cover opacity-70 transition-opacity duration-500 scale-105" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-end p-5"><h3 className="text-lg font-bold text-white mb-1 leading-tight">{project.title}</h3><p className="text-xs text-zinc-400 font-mono uppercase tracking-wider flex items-center gap-1">Explore <ChevronRight size={12} /></p></div>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              );
-            })}
+          {/* Deck stage */}
+          <div
+            className={`relative z-20 w-full max-w-[1200px] mx-auto flex items-center justify-center ${isTouchDevice ? 'deck-touch' : ''}`}
+            style={{ height: stageHeight, perspective: 1200 }}
+            onMouseEnter={handleDeckMouseEnter}
+            onMouseLeave={handleDeckMouseLeave}
+          >
+            {projects.map((project, index) => (
+              <Card
+                key={project.id}
+                project={project}
+                index={index}
+                centerIndex={(projects.length - 1) / 2}
+                totalCards={projects.length}
+                isSelected={selectedId === project.id}
+                isHovered={hoveredId === project.id}
+                isDeckFanned={deckFannedEffective}
+                isTouchDevice={isTouchDevice}
+                cardWidth={cardWidth}
+                cardHeight={cardHeight}
+                fanOffsetX={fanOffsetX}
+                onMouseEnter={() => handleCardMouseEnter(project.id)}
+                onPointerDown={(e) => handleCardPointerDown(e, project.id)}
+                onClick={() => {
+                  if (isTouchDevice) return; // tap handled via pointer up
+                  setSelectedId(project.id);
+                }}
+              />
+            ))}
           </div>
 
+          {/* Expanded modal */}
           <AnimatePresence>
             {selectedId && (
               <>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 bg-black/90 backdrop-blur-md z-40" onClick={() => setSelectedId(null)} />
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 pointer-events-none">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="fixed inset-0 bg-black/95 z-40"
+                  onClick={closeModal}
+                />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-8 pointer-events-none">
                   {projects.filter(p => p.id === selectedId).map(project => (
-                    <motion.div key={`expanded-${project.id}`} layoutId={`card-container-${project.id}`} className="w-full max-w-6xl h-[85vh] bg-[#0a0a0a] rounded-3xl overflow-hidden shadow-2xl relative pointer-events-auto border border-zinc-800">
+                    <motion.div
+                      key={`expanded-${project.id}`}
+                      layoutId={`card-container-${project.id}`}
+                      className="w-full max-w-6xl h-[88vh] md:h-[85vh] bg-[#0a0a0a] rounded-3xl overflow-hidden shadow-2xl relative pointer-events-auto border border-zinc-800"
+                    >
+                      {/* Iframe layer — only mounted when demo is requested */}
                       <div className="absolute inset-0 w-full h-full bg-black z-0">
-                        <iframe src="https://example.com" title={project.title} className={`w-full h-full border-0 transition-opacity duration-700 ${isPlayingDemo ? 'opacity-100' : 'opacity-40'}`} />
+                        {isPlayingDemo && !iframeBlocked && (
+                          <iframe
+                            src={`https://${project.live}`}
+                            title={project.title}
+                            className="w-full h-full border-0"
+                            onLoad={() => setIframeLoaded(true)}
+                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+                          />
+                        )}
+
+                        {/* Iframe blocked fallback */}
+                        {isPlayingDemo && iframeBlocked && (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-center px-8 gap-4">
+                            <p className="text-zinc-300 max-w-md">
+                              This site blocks embedded previews. Open the live demo in a new tab instead.
+                            </p>
+                            <a
+                              href={`https://${project.live}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-2 bg-white text-black py-3 px-5 rounded-xl text-sm font-bold hover:bg-zinc-200 transition-colors"
+                            >
+                              <ArrowUpRight size={16} /> Open {project.title}
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Preview image while not playing demo */}
+                        {!isPlayingDemo && (
+                          <img
+                            src={project.preview}
+                            alt={project.title}
+                            className="w-full h-full object-cover opacity-40"
+                          />
+                        )}
                       </div>
-                      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-t from-black/90 via-black/10 to-black/50 transition-opacity duration-700 ${isPlayingDemo ? 'opacity-0' : 'opacity-100'}`} />
-                      <div className="absolute top-6 right-6 z-30 pointer-events-auto"><button onClick={() => setSelectedId(null)} className="p-3 bg-black/40 hover:bg-black/60 backdrop-blur-xl rounded-full transition-colors text-zinc-300 hover:text-white border border-white/10 shadow-xl"><X size={24} /></button></div>
+
+                      {/* Dim gradient when not playing */}
+                      <div
+                        className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-t from-black/90 via-black/10 to-black/50 transition-opacity duration-500 ${isPlayingDemo ? 'opacity-0' : 'opacity-100'}`}
+                      />
+
+                      {/* Close button */}
+                      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-30 pointer-events-auto">
+                        <button
+                          onClick={closeModal}
+                          className="p-3 bg-black/50 hover:bg-black/70 backdrop-blur-md rounded-full transition-colors text-zinc-300 hover:text-white border border-white/10 shadow-xl"
+                          aria-label="Close"
+                        >
+                          <X size={22} />
+                        </button>
+                      </div>
+
+                      {/* Info panel */}
                       <AnimatePresence>
                         {!isPlayingDemo && (
-                          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20, filter: "blur(10px)" }} transition={{ duration: 0.4 }} className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:w-[480px] z-20 pointer-events-auto">
-                            <div className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-2xl flex flex-col max-h-[75vh] overflow-y-auto">
-                              <div className="mb-6"><motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }} className="font-mono text-xs tracking-widest uppercase mb-2" style={{ color: project.color }}>{project.role}</motion.div><motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="text-3xl md:text-4xl font-bold text-white tracking-tight">{project.title}</motion.h2></div>
-                              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.5 }} className="text-zinc-200 text-base leading-relaxed mb-8">{project.desc}</motion.p>
-                              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.5 }} className="mb-8"><h4 className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Technologies</h4><div className="flex flex-wrap gap-2">{project.tech.map(tech => (<span key={tech} className="px-3 py-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-xs font-medium text-zinc-200">{tech}</span>))}</div></motion.div>
-                              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }} className="mt-auto pt-6 border-t border-white/10 flex gap-3"><a href={`https://${project.repo}`} target="_blank" rel="noreferrer" className="flex-1 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors border border-white/10"><Github size={16} /> Source</a><button onClick={() => setIsPlayingDemo(true)} className="flex-1 bg-white text-black py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors shadow-lg"><ExternalLink size={16} /> Live Demo</button></motion.div>
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            transition={{ duration: 0.35 }}
+                            className="absolute bottom-3 left-3 right-3 md:bottom-8 md:left-8 md:w-[480px] z-20 pointer-events-auto"
+                          >
+                            <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col max-h-[78vh] overflow-y-auto">
+                              <div className="mb-5">
+                                <div
+                                  className="font-mono text-[11px] tracking-widest uppercase mb-2"
+                                  style={{ color: project.color }}
+                                >
+                                  {project.role}
+                                </div>
+                                <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight">
+                                  {project.title}
+                                </h2>
+                              </div>
+                              <p className="text-zinc-200 text-sm md:text-base leading-relaxed mb-6">
+                                {project.desc}
+                              </p>
+                              <div className="mb-6">
+                                <h4 className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3">Technologies</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {project.tech.map(tech => (
+                                    <span
+                                      key={tech}
+                                      className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-medium text-zinc-200"
+                                    >
+                                      {tech}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="mt-auto pt-5 border-t border-white/10 flex gap-3">
+                                <a
+                                  href={`https://${project.repo}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex-1 bg-white/10 hover:bg-white/15 text-white py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors border border-white/10"
+                                >
+                                  <Github size={16} /> Source
+                                </a>
+                                <button
+                                  onClick={() => setIsPlayingDemo(true)}
+                                  className="flex-1 bg-white text-black py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors shadow-lg"
+                                >
+                                  <ExternalLink size={16} /> Live Demo
+                                </button>
+                              </div>
                             </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
+
+                      {/* Loading shimmer over iframe */}
+                      {isPlayingDemo && !iframeLoaded && !iframeBlocked && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                          <div className="text-xs font-mono uppercase tracking-widest text-zinc-500 animate-pulse">
+                            Loading demo…
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Return-to-details pill while demo is playing */}
                       <AnimatePresence>
                         {isPlayingDemo && (
-                          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }} transition={{ duration: 0.4, delay: 0.2 }} className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
-                            <button onClick={() => setIsPlayingDemo(false)} className="bg-black/60 backdrop-blur-xl border border-white/20 text-white py-3 px-6 rounded-full text-sm font-bold shadow-2xl hover:bg-black/80 transition-colors flex items-center gap-2"><Layers size={16} /> Project Details</button>
+                          <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 30 }}
+                            transition={{ duration: 0.3, delay: 0.15 }}
+                            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto"
+                          >
+                            <button
+                              onClick={() => setIsPlayingDemo(false)}
+                              className="bg-black/70 backdrop-blur-md border border-white/20 text-white py-2.5 px-5 rounded-full text-xs md:text-sm font-bold shadow-2xl hover:bg-black/90 transition-colors flex items-center gap-2"
+                            >
+                              <Layers size={14} /> Project Details
+                            </button>
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -217,6 +603,7 @@ const projects = [
         </div>
       );
     }
+
     const root = createRoot(document.getElementById('root'));
     root.render(<PortfolioDeck />);
   </script>
