@@ -8,6 +8,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
   <script type="importmap">
     {
       "imports": {
@@ -27,11 +31,16 @@
       overscroll-behavior: none;
       -webkit-tap-highlight-color: transparent;
     }
-    /* Hint GPU for the card stage */
     .card-stage { will-change: transform; transform: translateZ(0); }
     .card-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-    /* Disable native scroll/zoom on the deck so scrubbing works on mobile */
-    .deck-touch { touch-action: none; }
+    .font-display { font-family: 'Bebas Neue', system-ui, sans-serif; letter-spacing: 0.01em; }
+    .font-mono-pro { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+    /* SVG noise texture as a CSS variable so we can reuse it */
+    .noise-layer {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
   </style>
 </head>
 <body class="text-zinc-100 antialiased selection:bg-zinc-800 selection:text-white">
@@ -52,7 +61,6 @@
         face: "♠ A",
         color: "#22c55e",
         tech: ["HTML5", "SVG", "JavaScript", "npoint.io"],
-        preview: "https://images.unsplash.com/photo-1518604666860-9ed391f76460?q=80&w=1000&auto=format&fit=crop",
         desc: "Drag-and-drop AFL team selection board with an SVG oval, magnet-style player tokens, multi-board persistence and coach access. Built for fast match-day selection on mobile.",
         repo: "github.com/jaredando/AFLselector",
         live: "jaredando.github.io/AFLselector/"
@@ -64,7 +72,6 @@
         face: "♥ K",
         color: "#ef4444",
         tech: ["HTML5", "JavaScript", "Anthropic API", "Gemini API"],
-        preview: "https://images.unsplash.com/photo-1606159068539-43f36b99d1b2?q=80&w=1000&auto=format&fit=crop",
         desc: "Spyfall-meets-mafia party game with Locations, TV, Movies and AI modes. Hold-to-peek card reveal, timer, voting flow and an AI mode that generates any scenario on demand.",
         repo: "github.com/jaredando/Outsider",
         live: "jaredando.github.io/Outsider"
@@ -76,19 +83,17 @@
         face: "♣ Q",
         color: "#0ea5e9",
         tech: ["HTML5", "JavaScript", "PDF Export", "LocalStorage"],
-        preview: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1000&auto=format&fit=crop",
         desc: "Zero-friction invoicing for Australian sole traders. Saved profiles, client book, BSB/ABN fields, line items and one-click PDF export — entirely client-side, no signup.",
         repo: "github.com/jaredando/soletrader",
         live: "jaredando.github.io/soletrader"
       },
       {
         id: "project-4",
-        title: "Squadlogic",
+        title: "SquadLogic",
         role: "Creator",
         face: "♦ J",
         color: "#f59e0b",
         tech: ["HTML5", "JavaScript", "CSS"],
-        preview: "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=1000&auto=format&fit=crop",
         desc: "Squad management and game-day logic tool for AFL coaches.",
         repo: "github.com/jaredando/SquadLogic",
         live: "jaredando.github.io/SquadLogic"
@@ -96,31 +101,55 @@
     ];
 
     // ──────────────────────────────────────────────────────────────────────
-    // Card — memoized so a hover change only re-renders the affected cards
+    // Card
     // ──────────────────────────────────────────────────────────────────────
     const Card = memo(function Card({
       project, index, centerIndex, totalCards,
       isSelected, isHovered, isDeckFanned, isTouchDevice,
       onClick, onMouseEnter,
-      cardWidth, cardHeight, fanOffsetX
+      cardWidth, cardHeight,
+      fanOffsetX, fanRotateMul, fanYDropMul
     }) {
+      const [dealt, setDealt] = useState(false);
+      const [previewLoaded, setPreviewLoaded] = useState(false);
+
+      useEffect(() => {
+        const t = setTimeout(() => setDealt(true), 250 + index * 110);
+        return () => clearTimeout(t);
+      }, [index]);
+
       const offset = index - centerIndex;
       let rotateZ = offset * 2;
       let x = offset * 2;
       let y = Math.abs(offset) * 1;
       let zIndex = totalCards - Math.abs(offset);
       if (isDeckFanned) {
-        rotateZ = offset * 6;
+        rotateZ = offset * fanRotateMul;
         x = offset * fanOffsetX;
-        y = Math.abs(offset) * 6;
+        y = Math.abs(offset) * fanYDropMul;
       }
       if (isHovered) {
         rotateZ = 0;
-        y = -90;
+        y = isTouchDevice ? -130 : -90;
         zIndex = 100;
       }
 
       const [symbol, rank] = project.face.split(' ');
+      const projectNum = `No.${String(index + 1).padStart(2, '0')}`;
+
+      const flipToBack = isHovered && !isSelected && !isTouchDevice;
+      const mobileTilt = isHovered && !isSelected && isTouchDevice;
+
+      const animateState = !dealt
+        ? { y: -300, x: 0, opacity: 0, scale: 0.82, rotateZ: 0 }
+        : {
+            rotateZ: isSelected ? 0 : rotateZ,
+            y: isSelected ? 0 : y,
+            x: isSelected ? 0 : x,
+            scale: isHovered && !isSelected ? (isTouchDevice ? 1.1 : 1.04) : 1,
+            opacity: isSelected ? 0 : 1,
+            zIndex
+          };
 
       return (
         <motion.div
@@ -133,85 +162,167 @@
             marginLeft: -cardWidth / 2,
             transformOrigin: "bottom center"
           }}
-          initial={{
-            rotateZ: offset * 2,
-            y: Math.abs(offset) * 2,
-            x: offset * 4,
-            opacity: 1
-          }}
-          animate={{
-            rotateZ: isSelected ? 0 : rotateZ,
-            y: isSelected ? 0 : y,
-            x: isSelected ? 0 : x,
-            scale: isHovered && !isSelected ? 1.04 : 1,
-            opacity: isSelected ? 0 : 1,
-            zIndex
-          }}
-          transition={{ type: "spring", stiffness: 380, damping: 32, mass: 0.7 }}
+          initial={{ y: -300, opacity: 0, scale: 0.82 }}
+          animate={animateState}
+          transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.8 }}
           onMouseEnter={onMouseEnter}
           onClick={onClick}
         >
           <motion.div
             className="w-full h-full relative"
             style={{ transformStyle: "preserve-3d" }}
-            animate={{ rotateY: isHovered && !isSelected ? 180 : 0 }}
-            transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+            animate={{ rotateY: flipToBack ? 180 : (mobileTilt ? -8 : 0) }}
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
           >
-            {/* FRONT */}
+
+            {/* ═══════════════ FRONT ═══════════════ */}
             <div
-              className="card-face absolute inset-0 w-full h-full bg-[#111] rounded-2xl overflow-hidden flex flex-col justify-between p-5"
+              className="card-face absolute inset-0 w-full h-full rounded-2xl overflow-hidden flex flex-col p-4 md:p-5"
               style={{
-                border: "1px solid rgba(255,255,255,0.1)",
-                boxShadow: "0 14px 28px rgba(0,0,0,0.45)"
+                background: "linear-gradient(140deg, #0e0e10 0%, #0a0a0c 50%, #131316 100%)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                boxShadow: isHovered && !isSelected
+                  ? `0 30px 60px rgba(0,0,0,0.6), 0 0 80px ${project.color}40, inset 0 1px 0 rgba(255,255,255,0.06)`
+                  : "0 14px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)",
+                transition: "box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1)"
               }}
             >
+              {/* Layer 1 — radial color glow from top */}
               <div
-                className="absolute inset-0 opacity-10 blur-2xl"
-                style={{ backgroundColor: project.color }}
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${project.color}26, transparent 60%)`
+                }}
               />
-              <div className="flex justify-between items-start z-10">
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl font-bold text-zinc-200">{rank}</span>
-                  <span className="text-xl" style={{ color: project.color }}>{symbol}</span>
+
+              {/* Layer 2 — diagonal sheen */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `linear-gradient(135deg, transparent 25%, rgba(255,255,255,0.05) 50%, transparent 75%)`
+                }}
+              />
+
+              {/* Layer 3 — noise grain */}
+              <div className="absolute inset-0 pointer-events-none noise-layer opacity-[0.04] mix-blend-overlay" />
+
+              {/* Layer 4 — inner stroke (subtle bevel) */}
+              <div className="absolute inset-[1px] rounded-[15px] pointer-events-none"
+                style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.02)" }}
+              />
+
+              {/* TOP ROW */}
+              <div className="relative flex justify-between items-start z-10">
+                <div className="flex flex-col">
+                  <span className="text-3xl font-bold text-zinc-100 leading-none">{rank}</span>
+                  <span className="text-lg mt-1 leading-none" style={{ color: project.color }}>{symbol}</span>
                 </div>
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center z-0">
-                <span
-                  className="text-8xl opacity-[0.06]"
-                  style={{ color: project.color }}
-                >
-                  {symbol}
+                <span className="text-[9px] font-mono-pro uppercase tracking-[0.2em] text-zinc-500 mt-1">
+                  {projectNum}
                 </span>
               </div>
-              <div className="flex justify-between items-end rotate-180 z-10">
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl font-bold text-zinc-200">{rank}</span>
-                  <span className="text-xl" style={{ color: project.color }}>{symbol}</span>
+
+              {/* CENTER */}
+              <div className="relative flex-1 flex flex-col items-center justify-center z-10 px-1 text-center">
+                <h3
+                  className="font-display text-white leading-[0.9]"
+                  style={{
+                    fontSize: cardWidth < 220 ? '2.25rem' : '3rem',
+                    textShadow: `0 2px 20px ${project.color}40`
+                  }}
+                >
+                  {project.title}
+                </h3>
+                <div
+                  className="mt-3 text-[9px] md:text-[10px] font-mono-pro uppercase tracking-[0.3em] flex items-center gap-2"
+                  style={{ color: project.color }}
+                >
+                  <span className="opacity-50">—</span>
+                  <span>{project.role}</span>
+                  <span className="opacity-50">—</span>
                 </div>
               </div>
+
+              {/* BOTTOM ROW (rotated 180 for that classic card mirroring) */}
+              <div className="relative flex justify-between items-end z-10 rotate-180">
+                <div className="flex flex-col">
+                  <span className="text-3xl font-bold text-zinc-100 leading-none">{rank}</span>
+                  <span className="text-lg mt-1 leading-none" style={{ color: project.color }}>{symbol}</span>
+                </div>
+                <span className="text-[9px] font-mono-pro uppercase tracking-[0.2em] text-zinc-500 mt-1">
+                  {projectNum}
+                </span>
+              </div>
+
+              {/* Mobile-only floating hint */}
+              {mobileTilt && (
+                <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30">
+                  <span className="text-[9px] font-mono-pro uppercase tracking-[0.2em] text-zinc-100 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 whitespace-nowrap">
+                    Tap again to open
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* BACK — only paint when hovered to avoid wasted layers */}
-            {(isHovered || isSelected) && (
+            {/* ═══════════════ BACK — desktop only, live iframe preview ═══════════════ */}
+            {!isTouchDevice && (
               <div
-                className="card-face absolute inset-0 w-full h-full bg-zinc-900 rounded-2xl overflow-hidden"
+                className="card-face absolute inset-0 w-full h-full bg-zinc-950 rounded-2xl overflow-hidden"
                 style={{
                   transform: "rotateY(180deg)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  boxShadow: "0 14px 28px rgba(0,0,0,0.45)"
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  boxShadow: "0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)"
                 }}
               >
-                <img
-                  src={project.preview}
-                  alt={project.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover opacity-70 scale-105"
+                {/* Color fallback while iframe loads */}
+                <div
+                  className="absolute inset-0 transition-opacity duration-500"
+                  style={{
+                    background: `linear-gradient(135deg, ${project.color}33, ${project.color}11 60%, #0a0a0c)`,
+                    opacity: previewLoaded ? 0 : 1
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-end p-5">
-                  <h3 className="text-lg font-bold text-white mb-1 leading-tight">{project.title}</h3>
-                  <p className="text-xs text-zinc-400 font-mono uppercase tracking-wider flex items-center gap-1">
-                    {isTouchDevice ? "Tap to open" : "Click to open"} <ChevronRight size={12} />
+
+                {/* Live iframe — renders site at ~4x card size then scales to fit */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <iframe
+                    src={`https://${project.live}`}
+                    title={`${project.title} preview`}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    scrolling="no"
+                    onLoad={() => setPreviewLoaded(true)}
+                    sandbox="allow-scripts allow-same-origin"
+                    style={{
+                      width: '400%',
+                      height: '400%',
+                      border: 'none',
+                      transform: 'scale(0.25)',
+                      transformOrigin: 'top left',
+                      pointerEvents: 'none',
+                      opacity: previewLoaded ? 1 : 0,
+                      transition: 'opacity 0.5s ease-out'
+                    }}
+                  />
+                </div>
+
+                {/* Bottom gradient + CTA */}
+                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 right-0 p-5 z-20">
+                  <div
+                    className="text-[9px] font-mono-pro uppercase tracking-[0.25em] mb-2 opacity-80"
+                    style={{ color: project.color }}
+                  >
+                    Live preview
+                  </div>
+                  <h3
+                    className="font-display text-white leading-none mb-3 text-3xl"
+                    style={{ textShadow: `0 2px 20px ${project.color}66` }}
+                  >
+                    {project.title}
+                  </h3>
+                  <p className="text-[10px] text-zinc-400 font-mono-pro uppercase tracking-[0.2em] flex items-center gap-1">
+                    Click to open <ChevronRight size={12} />
                   </p>
                 </div>
               </div>
@@ -234,12 +345,10 @@
       const [isTouchDevice, setIsTouchDevice] = useState(false);
       const [viewport, setViewport] = useState({ w: typeof window !== "undefined" ? window.innerWidth : 1200 });
 
-      // Refs
-      const suppressFanUntilRef = useRef(0); // cooldown after closing modal
+      const suppressFanUntilRef = useRef(0);
       const iframeWatchdogRef = useRef(null);
-      const iframeLoadedRef = useRef(false); // live ref dodges stale closure
+      const iframeLoadedRef = useRef(false);
 
-      // Detect touch / viewport
       useEffect(() => {
         const mq = window.matchMedia('(hover: none), (pointer: coarse)');
         const update = () => setIsTouchDevice(mq.matches);
@@ -253,7 +362,6 @@
         };
       }, []);
 
-      // Lock body scroll while modal is open + reset iframe state per project
       useEffect(() => {
         if (selectedId) {
           document.body.style.overflow = "hidden";
@@ -261,9 +369,6 @@
           setIframeBlocked(false);
           setIframeLoaded(false);
           iframeLoadedRef.current = false;
-
-          // Watchdog: if the iframe hasn't reported loaded in 6s, assume the
-          // host blocked embedding and surface the fallback.
           clearTimeout(iframeWatchdogRef.current);
           iframeWatchdogRef.current = setTimeout(() => {
             if (!iframeLoadedRef.current) setIframeBlocked(true);
@@ -278,10 +383,9 @@
         };
       }, [selectedId]);
 
-      // ─── Mouse / hover handlers ────────────────────────────────────────
       const handleDeckMouseEnter = useCallback(() => {
         if (isTouchDevice) return;
-        if (Date.now() < suppressFanUntilRef.current) return; // post-close cooldown
+        if (Date.now() < suppressFanUntilRef.current) return;
         setIsDeckFanned(true);
       }, [isTouchDevice]);
 
@@ -296,74 +400,49 @@
         setHoveredId(id);
       }, [isTouchDevice]);
 
-      // ─── Pointer (touch) handlers — two-tap model ──────────────────────
-      // On touch devices the deck is auto-fanned with the middle card lifted.
-      // Tapping any unfocused card lifts it; tapping the already-focused card
-      // opens it. Everything is handled in the card's onClick — no special
-      // pointer tracking needed.
-
-      // Auto-focus the middle card on touch so the user can see what
-      // "focused" looks like without taking an action first.
-      useEffect(() => {
-        if (isTouchDevice && hoveredId === null && selectedId === null) {
-          const middleId = projects[Math.floor(projects.length / 2)].id;
-          setHoveredId(middleId);
-        }
-      }, [isTouchDevice, hoveredId, selectedId]);
-
-      // ─── Close modal ───────────────────────────────────────────────────
       const closeModal = useCallback(() => {
         setSelectedId(null);
         if (!isTouchDevice) {
-          // On desktop, fully reset; the mouse will re-trigger fan/hover.
           setHoveredId(null);
           setIsDeckFanned(false);
         }
-        // (On touch, keep the previously-selected card focused so a single
-        // tap re-opens it — feels much faster than re-focusing every time.)
-        // Suppress the auto-fan for 700ms so the deck doesn't immediately
-        // open back up while the cursor is still over it.
         suppressFanUntilRef.current = Date.now() + 700;
       }, [isTouchDevice]);
 
-      // ─── Sizing ────────────────────────────────────────────────────────
       const isNarrow = viewport.w < 640;
-      const cardWidth = isNarrow ? 180 : 260;
-      const cardHeight = isNarrow ? 260 : 380;
-      const fanOffsetX = isNarrow ? 48 : 65;
-      const stageHeight = isNarrow ? 380 : 500;
+      const cardWidth = isNarrow ? 190 : 280;
+      const cardHeight = isNarrow ? 275 : 400;
+      const fanOffsetX = isNarrow ? 60 : 70;
+      const fanRotateMul = isNarrow ? 9 : 6;
+      const fanYDropMul = isNarrow ? 14 : 6;
+      const stageHeight = isNarrow ? 400 : 520;
 
-      // On touch devices, deck is permanently fanned for discoverability
       const deckFannedEffective = isTouchDevice || isDeckFanned;
 
       return (
         <div className="min-h-screen w-full bg-[#050505] flex flex-col items-center justify-center relative overflow-hidden font-sans">
 
-          {/* Background ambience */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-zinc-800/20 blur-[120px]" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-zinc-800/10 blur-[100px]" />
           </div>
 
-          {/* Header */}
           <div className="absolute top-6 left-6 md:top-8 md:left-8 z-30 pointer-events-none flex items-center gap-3">
             <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center shadow-xl">
               <Layers size={20} className="text-zinc-400" />
             </div>
             <div>
               <h1 className="text-lg md:text-xl font-bold tracking-tight text-white leading-none">Jared in Tech</h1>
-              <p className="text-[10px] md:text-xs text-zinc-500 font-mono tracking-widest uppercase mt-1">Portfolio '26</p>
+              <p className="text-[10px] md:text-xs text-zinc-500 font-mono-pro tracking-widest uppercase mt-1">Portfolio '26</p>
             </div>
           </div>
 
-          {/* Mobile hint */}
-          {isTouchDevice && !selectedId && (
-            <p className="absolute bottom-6 left-0 right-0 z-20 text-center text-[11px] font-mono uppercase tracking-widest text-zinc-500 px-6 pointer-events-none">
-              Tap to focus · tap again to open
+          {isTouchDevice && !selectedId && !hoveredId && (
+            <p className="absolute bottom-6 left-0 right-0 z-20 text-center text-[10px] font-mono-pro uppercase tracking-[0.3em] text-zinc-500 px-6 pointer-events-none">
+              Tap a card to lift
             </p>
           )}
 
-          {/* Deck stage */}
           <div
             className="relative z-20 w-full max-w-[1200px] mx-auto flex items-center justify-center"
             style={{ height: stageHeight, perspective: 1200 }}
@@ -384,16 +463,13 @@
                 cardWidth={cardWidth}
                 cardHeight={cardHeight}
                 fanOffsetX={fanOffsetX}
+                fanRotateMul={fanRotateMul}
+                fanYDropMul={fanYDropMul}
                 onMouseEnter={() => handleCardMouseEnter(project.id)}
                 onClick={() => {
                   if (isTouchDevice) {
-                    // Two-tap: first tap focuses, second tap on the same
-                    // focused card opens.
-                    if (hoveredId === project.id) {
-                      setSelectedId(project.id);
-                    } else {
-                      setHoveredId(project.id);
-                    }
+                    if (hoveredId === project.id) setSelectedId(project.id);
+                    else setHoveredId(project.id);
                   } else {
                     setSelectedId(project.id);
                   }
@@ -424,8 +500,6 @@
                       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                       className="w-full max-w-6xl h-[88vh] md:h-[85vh] bg-[#0a0a0a] rounded-3xl overflow-hidden shadow-2xl relative pointer-events-auto border border-zinc-800"
                     >
-                      {/* Iframe layer — mounts as soon as the modal opens.
-                          The Live Demo button just hides the info panel. */}
                       <div className="absolute inset-0 w-full h-full bg-black z-0">
                         {!iframeBlocked && (
                           <iframe
@@ -440,7 +514,6 @@
                           />
                         )}
 
-                        {/* Iframe blocked fallback */}
                         {iframeBlocked && (
                           <div className="w-full h-full flex flex-col items-center justify-center text-center px-8 gap-4">
                             <p className="text-zinc-300 max-w-md">
@@ -458,26 +531,10 @@
                         )}
                       </div>
 
-                      {/* Permanent open-in-new-tab — always available */}
-                      {!iframeBlocked && (
-                        <a
-                          href={`https://${project.live}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="absolute top-4 left-4 md:top-6 md:left-6 z-30 p-2.5 bg-black/50 hover:bg-black/70 backdrop-blur-md rounded-full transition-colors text-zinc-300 hover:text-white border border-white/10 shadow-xl"
-                          aria-label="Open in new tab"
-                          title="Open in new tab"
-                        >
-                          <ArrowUpRight size={18} />
-                        </a>
-                      )}
-
-                      {/* Dim gradient when not playing */}
                       <div
                         className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-t from-black/90 via-black/10 to-black/50 transition-opacity duration-500 ${isPlayingDemo ? 'opacity-0' : 'opacity-100'}`}
                       />
 
-                      {/* Close button */}
                       <div className="absolute top-4 right-4 md:top-6 md:right-6 z-30 pointer-events-auto">
                         <button
                           onClick={closeModal}
@@ -488,7 +545,6 @@
                         </button>
                       </div>
 
-                      {/* Info panel */}
                       <AnimatePresence>
                         {!isPlayingDemo && (
                           <motion.div
@@ -496,17 +552,20 @@
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 20 }}
                             transition={{ duration: 0.35, delay: 0.05 }}
-                            className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:w-[480px] z-20 pointer-events-auto"
+                            className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[520px] z-20 pointer-events-auto"
                           >
                             <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col max-h-[78vh] overflow-y-auto">
                               <div className="mb-5">
                                 <div
-                                  className="font-mono text-[11px] tracking-widest uppercase mb-2"
+                                  className="font-mono-pro text-[10px] tracking-[0.3em] uppercase mb-2"
                                   style={{ color: project.color }}
                                 >
                                   {project.role}
                                 </div>
-                                <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight">
+                                <h2
+                                  className="font-display text-white leading-[0.9]"
+                                  style={{ fontSize: 'clamp(2.25rem, 5vw, 3.5rem)' }}
+                                >
                                   {project.title}
                                 </h2>
                               </div>
@@ -514,7 +573,7 @@
                                 {project.desc}
                               </p>
                               <div className="mb-6">
-                                <h4 className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3">Technologies</h4>
+                                <h4 className="text-[10px] text-zinc-400 uppercase tracking-[0.3em] mb-3 font-mono-pro">Technologies</h4>
                                 <div className="flex flex-wrap gap-2">
                                   {project.tech.map(tech => (
                                     <span
@@ -547,32 +606,48 @@
                         )}
                       </AnimatePresence>
 
-                      {/* Loading shimmer over iframe */}
                       {!iframeLoaded && !iframeBlocked && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                          <div className="text-xs font-mono uppercase tracking-widest text-zinc-500 animate-pulse">
+                          <div className="text-xs font-mono-pro uppercase tracking-[0.3em] text-zinc-500 animate-pulse">
                             Loading demo…
                           </div>
                         </div>
                       )}
 
-                      {/* Return-to-details pill while demo is playing */}
                       <AnimatePresence>
                         {isPlayingDemo && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 30 }}
-                            transition={{ duration: 0.3, delay: 0.15 }}
-                            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto"
-                          >
-                            <button
-                              onClick={() => setIsPlayingDemo(false)}
-                              className="bg-black/70 backdrop-blur-md border border-white/20 text-white py-2.5 px-5 rounded-full text-xs md:text-sm font-bold shadow-2xl hover:bg-black/90 transition-colors flex items-center gap-2"
+                          <>
+                            <motion.div
+                              initial={{ opacity: 0, y: 30 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 30 }}
+                              transition={{ duration: 0.3, delay: 0.15 }}
+                              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto"
                             >
-                              <Layers size={14} /> Project Details
-                            </button>
-                          </motion.div>
+                              <button
+                                onClick={() => setIsPlayingDemo(false)}
+                                className="bg-black/70 backdrop-blur-md border border-white/20 text-white py-2.5 px-5 rounded-full text-xs md:text-sm font-bold shadow-2xl hover:bg-black/90 transition-colors flex items-center gap-2"
+                              >
+                                <Layers size={14} /> Project Details
+                              </button>
+                            </motion.div>
+
+                            {!iframeBlocked && (
+                              <motion.a
+                                href={`https://${project.live}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 30 }}
+                                transition={{ duration: 0.3, delay: 0.2 }}
+                                className="absolute bottom-6 right-4 md:right-6 z-30 pointer-events-auto bg-black/70 backdrop-blur-md border border-white/20 text-white py-2.5 px-5 rounded-full text-xs md:text-sm font-bold shadow-2xl hover:bg-black/90 transition-colors flex items-center gap-2"
+                                aria-label="Open in new tab"
+                              >
+                                Open Site <ArrowUpRight size={14} />
+                              </motion.a>
+                            )}
+                          </>
                         )}
                       </AnimatePresence>
                     </motion.div>
