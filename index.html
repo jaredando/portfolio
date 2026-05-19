@@ -41,18 +41,56 @@
     import { motion, AnimatePresence } from "framer-motion";
     import { Github, ExternalLink, X, ChevronRight, Layers } from "lucide-react";
 
-    const projects = [
-      { id: "project-1", title: "Quantum UI", role: "Frontend Engineer", face: "♠ A", color: "#38bdf8", tech: ["React", "Framer Motion", "WebGL"], preview: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000&auto=format&fit=crop", desc: "A cutting-edge component library focusing on micro-interactions and performance. Built for the modern web with headless architecture.", repo: "github.com/jared/quantum-ui" },
-      { id: "project-2", title: "Nexus Trading", role: "Fullstack Developer", face: "♥ K", color: "#f43f5e", tech: ["Next.js", "Node.js", "PostgreSQL"], preview: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1000&auto=format&fit=crop", desc: "Real-time algorithmic trading dashboard with millisecond latency WebSocket feeds and complex D3 visualizations.", repo: "github.com/jared/nexus-trading" },
-      { id: "project-3", title: "Echo Protocol", role: "Smart Contract Dev", face: "♣ Q", color: "#34d399", tech: ["Solidity", "TypeScript", "Ethers.js"], preview: "https://images.unsplash.com/photo-1639762681485-074b7f4ec651?q=80&w=1000&auto=format&fit=crop", desc: "Decentralized finance protocol enabling cross-chain atomic swaps with zero knowledge proofs.", repo: "github.com/jared/echo-protocol" },
-      { id: "project-4", title: "Aura AI", role: "Lead Designer", face: "♦ J", color: "#a78bfa", tech: ["Python", "TensorFlow", "React"], preview: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000&auto=format&fit=crop", desc: "Generative AI interface for creating spatial audio landscapes based on textual emotion inputs.", repo: "github.com/jared/aura-ai" },
-      { id: "project-5", title: "Neural Canvas", role: "Creative Coder", face: "♠ 10", color: "#fb923c", tech: ["WebGL", "Three.js", "GLSL"], preview: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop", desc: "Interactive generative art platform driven by real-time neural network visualizations.", repo: "github.com/jared/neural-canvas" },
-      { id: "project-6", title: "Omni Engine", role: "Systems Engineer", face: "♥ 9", color: "#ef4444", tech: ["Rust", "WASM", "WebGPU"], preview: "https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=1000&auto=format&fit=crop", desc: "High-performance browser rendering engine built entirely in Rust and compiled to WebAssembly.", repo: "github.com/jared/omni-engine" },
-      { id: "project-7", title: "Zenith Mobile", role: "Mobile Dev", face: "♣ 8", color: "#10b981", tech: ["React Native", "Swift", "Kotlin"], preview: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=1000&auto=format&fit=crop", desc: "Award-winning fitness tracking application with offline-first capabilities and native biometric integration.", repo: "github.com/jared/zenith" },
-      { id: "project-8", title: "Horizon Labs", role: "Frontend Lead", face: "♦ 7", color: "#8b5cf6", tech: ["Vue 3", "Vite", "Tailwind"], preview: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000&auto=format&fit=crop", desc: "Corporate marketing site featuring complex scroll-linked animations and a custom headless CMS integration.", repo: "github.com/jared/horizon" },
-      { id: "project-9", title: "Vektor DB", role: "Backend Engineer", face: "♠ 6", color: "#0ea5e9", tech: ["Go", "gRPC", "Docker"], preview: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1000&auto=format&fit=crop", desc: "Distributed vector database designed specifically for low-latency LLM embedding retrieval.", repo: "github.com/jared/vektor" },
-      { id: "project-10", title: "Flux Network", role: "Architect", face: "♥ 5", color: "#f59e0b", tech: ["Next.js", "Redis", "WebRTC"], preview: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop", desc: "Peer-to-peer file sharing protocol operating entirely within the browser via WebRTC data channels.", repo: "github.com/jared/flux" }
-    ];
+const projects = [
+  {
+    id: "project-1",
+    title: "Team Sheet",
+    role: "Creator",
+    face: "♠ A",
+    color: "#22c55e",
+    tech: ["HTML5", "SVG", "JavaScript", "npoint.io"],
+    preview: "https://images.unsplash.com/photo-1518604666860-9ed391f76460?q=80&w=1000&auto=format&fit=crop",
+    desc: "Drag-and-drop AFL team selection board with an SVG oval, magnet-style player tokens, multi-board persistence and coach access. Built for fast match-day selection on mobile.",
+    repo: "github.com/jaredando/AFLselector",
+    live: "jaredando.github.io/AFLselector/"
+  },
+  {
+    id: "project-2",
+    title: "Outsider",
+    role: "Creator",
+    face: "♥ K",
+    color: "#ef4444",
+    tech: ["HTML5", "JavaScript", "Anthropic API", "Gemini API"],
+    preview: "https://images.unsplash.com/photo-1606159068539-43f36b99d1b2?q=80&w=1000&auto=format&fit=crop",
+    desc: "Spyfall-meets-mafia party game with Locations, TV, Movies and AI modes. Hold-to-peek card reveal, timer, voting flow and an AI mode that generates any scenario on demand.",
+    repo: "github.com/jaredando/Outsider",
+    live: "jaredando.github.io/Outsider"
+  },
+  {
+    id: "project-3",
+    title: "Invoicer",
+    role: "Creator",
+    face: "♣ Q",
+    color: "#0ea5e9",
+    tech: ["HTML5", "JavaScript", "PDF Export", "LocalStorage"],
+    preview: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1000&auto=format&fit=crop",
+    desc: "Zero-friction invoicing for Australian sole traders. Saved profiles, client book, BSB/ABN fields, line items and one-click PDF export — entirely client-side, no signup.",
+    repo: "github.com/jaredando/soletrader",
+    live: "jaredando.github.io/soletrader"
+  },
+  {
+    id: "project-4",
+    title: "Squadlogic",
+    role: "Creator",
+    face: "♦ J",
+    color: "#f59e0b",
+    tech: ["HTML5", "JavaScript", "CSS"],
+    preview: "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=1000&auto=format&fit=crop",
+    desc: "Squad management and game-day logic tool for AFL coaches.",
+    repo: "github.com/jaredando/Squadlogic",
+    live: "jaredando.github.io/Squadlogic"
+  }
+];
 
     function PortfolioDeck() {
       const [selectedId, setSelectedId] = useState(null);
