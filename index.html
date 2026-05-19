@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jared in Tech</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Babel for compiling React JSX in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Import Map to resolve our React and Framer Motion dependencies -->
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "framer-motion": "https://esm.sh/framer-motion@11.0.8?deps=react@18.2.0,react-dom@18.2.0",
+        "lucide-react": "https://esm.sh/lucide-react@0.358.0?deps=react@18.2.0"
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      background-color: #050505;
+      overflow-x: hidden;
+    }
+  </style>
+</head>
+<body class="text-zinc-100 antialiased selection:bg-zinc-800 selection:text-white">
+  
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect } from "react";
+    import { createRoot } from "react-dom/client";
+    import { motion, AnimatePresence } from "framer-motion";
+    import { Github, ExternalLink, X, ChevronRight, Layers } from "lucide-react";
+
+    const projects = [
+      { id: "project-1", title: "Quantum UI", role: "Frontend Engineer", face: "♠ A", color: "#38bdf8", tech: ["React", "Framer Motion", "WebGL"], preview: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000&auto=format&fit=crop", desc: "A cutting-edge component library focusing on micro-interactions and performance. Built for the modern web with headless architecture.", repo: "github.com/jared/quantum-ui" },
+      { id: "project-2", title: "Nexus Trading", role: "Fullstack Developer", face: "♥ K", color: "#f43f5e", tech: ["Next.js", "Node.js", "PostgreSQL"], preview: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1000&auto=format&fit=crop", desc: "Real-time algorithmic trading dashboard with millisecond latency WebSocket feeds and complex D3 visualizations.", repo: "github.com/jared/nexus-trading" },
+      { id: "project-3", title: "Echo Protocol", role: "Smart Contract Dev", face: "♣ Q", color: "#34d399", tech: ["Solidity", "TypeScript", "Ethers.js"], preview: "https://images.unsplash.com/photo-1639762681485-074b7f4ec651?q=80&w=1000&auto=format&fit=crop", desc: "Decentralized finance protocol enabling cross-chain atomic swaps with zero knowledge proofs.", repo: "github.com/jared/echo-protocol" },
+      { id: "project-4", title: "Aura AI", role: "Lead Designer", face: "♦ J", color: "#a78bfa", tech: ["Python", "TensorFlow", "React"], preview: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000&auto=format&fit=crop", desc: "Generative AI interface for creating spatial audio landscapes based on textual emotion inputs.", repo: "github.com/jared/aura-ai" },
+      { id: "project-5", title: "Neural Canvas", role: "Creative Coder", face: "♠ 10", color: "#fb923c", tech: ["WebGL", "Three.js", "GLSL"], preview: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop", desc: "Interactive generative art platform driven by real-time neural network visualizations.", repo: "github.com/jared/neural-canvas" },
+      { id: "project-6", title: "Omni Engine", role: "Systems Engineer", face: "♥ 9", color: "#ef4444", tech: ["Rust", "WASM", "WebGPU"], preview: "https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=1000&auto=format&fit=crop", desc: "High-performance browser rendering engine built entirely in Rust and compiled to WebAssembly.", repo: "github.com/jared/omni-engine" },
+      { id: "project-7", title: "Zenith Mobile", role: "Mobile Dev", face: "♣ 8", color: "#10b981", tech: ["React Native", "Swift", "Kotlin"], preview: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=1000&auto=format&fit=crop", desc: "Award-winning fitness tracking application with offline-first capabilities and native biometric integration.", repo: "github.com/jared/zenith" },
+      { id: "project-8", title: "Horizon Labs", role: "Frontend Lead", face: "♦ 7", color: "#8b5cf6", tech: ["Vue 3", "Vite", "Tailwind"], preview: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000&auto=format&fit=crop", desc: "Corporate marketing site featuring complex scroll-linked animations and a custom headless CMS integration.", repo: "github.com/jared/horizon" },
+      { id: "project-9", title: "Vektor DB", role: "Backend Engineer", face: "♠ 6", color: "#0ea5e9", tech: ["Go", "gRPC", "Docker"], preview: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1000&auto=format&fit=crop", desc: "Distributed vector database designed specifically for low-latency LLM embedding retrieval.", repo: "github.com/jared/vektor" },
+      { id: "project-10", title: "Flux Network", role: "Architect", face: "♥ 5", color: "#f59e0b", tech: ["Next.js", "Redis", "WebRTC"], preview: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop", desc: "Peer-to-peer file sharing protocol operating entirely within the browser via WebRTC data channels.", repo: "github.com/jared/flux" }
+    ];
+
+    function PortfolioDeck() {
+      const [selectedId, setSelectedId] = useState(null);
+      const [hoveredId, setHoveredId] = useState(null);
+      const [isDeckFanned, setIsDeckFanned] = useState(false);
+      const [isPlayingDemo, setIsPlayingDemo] = useState(false);
+
+      useEffect(() => {
+        if (selectedId) {
+          document.body.style.overflow = "hidden";
+        } else {
+          document.body.style.overflow = "auto";
+          setIsPlayingDemo(false);
+        }
+        return () => { document.body.style.overflow = "auto"; };
+      }, [selectedId]);
+
+      return (
+        <div className="min-h-screen w-full bg-[#050505] flex flex-col items-center justify-center relative overflow-hidden font-sans">
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-zinc-800/20 blur-[120px]" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-zinc-800/10 blur-[100px]" />
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
+          </div>
+
+          <div className="absolute top-8 left-8 z-30 pointer-events-none flex items-center gap-3">
+            <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center shadow-xl">
+              <Layers size={20} className="text-zinc-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white leading-none">Jared in Tech</h1>
+              <p className="text-xs text-zinc-500 font-mono tracking-widest uppercase mt-1">Portfolio '26</p>
+            </div>
+          </div>
+
+          <div 
+            className="relative z-20 w-full max-w-[1200px] mx-auto flex items-center justify-center"
+            style={{ height: 500, perspective: 1200 }}
+            onMouseEnter={() => setIsDeckFanned(true)}
+            onMouseLeave={() => {
+              setIsDeckFanned(false);
+              setHoveredId(null);
+            }}
+          >
+            {projects.map((project, index) => {
+              const isSelected = selectedId === project.id;
+              const isHovered = hoveredId === project.id;
+              const totalCards = projects.length;
+              const centerIndex = (totalCards - 1) / 2;
+              const offset = index - centerIndex;
+              let rotateZ = offset * 2;
+              let x = offset * 2;
+              let y = Math.abs(offset) * 1;
+              let zIndex = totalCards - Math.abs(offset); 
+              if (isDeckFanned) { rotateZ = offset * 6; x = offset * 65; y = Math.abs(offset) * 6; }
+              if (isHovered) { rotateZ = 0; y = -90; zIndex = 100; }
+
+              return (
+                <motion.div
+                  key={project.id}
+                  layoutId={`card-container-${project.id}`}
+                  className="absolute top-1/2 left-1/2 cursor-pointer"
+                  style={{ width: 260, height: 380, marginTop: -190, marginLeft: -130, transformOrigin: "bottom center" }}
+                  initial={{ rotateZ: offset * 2, y: Math.abs(offset) * 2, x: offset * 4, zIndex }}
+                  animate={{ rotateZ: isSelected ? 0 : rotateZ, y: isSelected ? 0 : y, x: isSelected ? 0 : x, scale: isHovered && !isSelected ? 1.05 : 1, opacity: isSelected ? 0 : 1, zIndex }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25, mass: 1.2 }}
+                  onMouseEnter={() => setHoveredId(project.id)}
+                  onClick={() => setSelectedId(project.id)}
+                >
+                  <motion.div className="w-full h-full relative" style={{ transformStyle: "preserve-3d" }} animate={{ rotateY: isHovered && !isSelected ? 180 : 0 }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}>
+                    <div className="absolute inset-0 w-full h-full bg-[#111] rounded-2xl overflow-hidden flex flex-col justify-between p-5" style={{ backfaceVisibility: "hidden", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "inset 0 0 20px rgba(255,255,255,0.02), 0 20px 40px rgba(0,0,0,0.5)" }}>
+                      <div className="absolute inset-0 opacity-10 blur-2xl transition-opacity duration-300" style={{ backgroundColor: project.color }} />
+                      <div className="flex justify-between items-start z-10"><div className="flex flex-col items-center"><span className="text-2xl font-bold text-zinc-200">{project.face.split(' ')[1]}</span><span className="text-xl" style={{ color: project.color }}>{project.face.split(' ')[0]}</span></div></div>
+                      <div className="absolute inset-0 flex items-center justify-center z-0"><span className="text-8xl opacity-5 drop-shadow-2xl" style={{ color: project.color, filter: `drop-shadow(0 0 20px ${project.color})` }}>{project.face.split(' ')[0]}</span></div>
+                      <div className="flex justify-between items-end rotate-180 z-10"><div className="flex flex-col items-center"><span className="text-2xl font-bold text-zinc-200">{project.face.split(' ')[1]}</span><span className="text-xl" style={{ color: project.color }}>{project.face.split(' ')[0]}</span></div></div>
+                    </div>
+                    <div className="absolute inset-0 w-full h-full bg-zinc-900 rounded-2xl overflow-hidden" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}>
+                      <img src={project.preview} alt={project.title} className="w-full h-full object-cover opacity-70 transition-opacity duration-500 scale-105" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-end p-5"><h3 className="text-lg font-bold text-white mb-1 leading-tight">{project.title}</h3><p className="text-xs text-zinc-400 font-mono uppercase tracking-wider flex items-center gap-1">Explore <ChevronRight size={12} /></p></div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          <AnimatePresence>
+            {selectedId && (
+              <>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 bg-black/90 backdrop-blur-md z-40" onClick={() => setSelectedId(null)} />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 pointer-events-none">
+                  {projects.filter(p => p.id === selectedId).map(project => (
+                    <motion.div key={`expanded-${project.id}`} layoutId={`card-container-${project.id}`} className="w-full max-w-6xl h-[85vh] bg-[#0a0a0a] rounded-3xl overflow-hidden shadow-2xl relative pointer-events-auto border border-zinc-800">
+                      <div className="absolute inset-0 w-full h-full bg-black z-0">
+                        <iframe src="https://example.com" title={project.title} className={`w-full h-full border-0 transition-opacity duration-700 ${isPlayingDemo ? 'opacity-100' : 'opacity-40'}`} />
+                      </div>
+                      <div className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-t from-black/90 via-black/10 to-black/50 transition-opacity duration-700 ${isPlayingDemo ? 'opacity-0' : 'opacity-100'}`} />
+                      <div className="absolute top-6 right-6 z-30 pointer-events-auto"><button onClick={() => setSelectedId(null)} className="p-3 bg-black/40 hover:bg-black/60 backdrop-blur-xl rounded-full transition-colors text-zinc-300 hover:text-white border border-white/10 shadow-xl"><X size={24} /></button></div>
+                      <AnimatePresence>
+                        {!isPlayingDemo && (
+                          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20, filter: "blur(10px)" }} transition={{ duration: 0.4 }} className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:w-[480px] z-20 pointer-events-auto">
+                            <div className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-2xl flex flex-col max-h-[75vh] overflow-y-auto">
+                              <div className="mb-6"><motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }} className="font-mono text-xs tracking-widest uppercase mb-2" style={{ color: project.color }}>{project.role}</motion.div><motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }} className="text-3xl md:text-4xl font-bold text-white tracking-tight">{project.title}</motion.h2></div>
+                              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.5 }} className="text-zinc-200 text-base leading-relaxed mb-8">{project.desc}</motion.p>
+                              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.5 }} className="mb-8"><h4 className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Technologies</h4><div className="flex flex-wrap gap-2">{project.tech.map(tech => (<span key={tech} className="px-3 py-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-xs font-medium text-zinc-200">{tech}</span>))}</div></motion.div>
+                              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }} className="mt-auto pt-6 border-t border-white/10 flex gap-3"><a href={`https://${project.repo}`} target="_blank" rel="noreferrer" className="flex-1 bg-white/10 hover:bg-white/20 text-white backdrop-blur-md py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors border border-white/10"><Github size={16} /> Source</a><button onClick={() => setIsPlayingDemo(true)} className="flex-1 bg-white text-black py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors shadow-lg"><ExternalLink size={16} /> Live Demo</button></motion.div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      <AnimatePresence>
+                        {isPlayingDemo && (
+                          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }} transition={{ duration: 0.4, delay: 0.2 }} className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+                            <button onClick={() => setIsPlayingDemo(false)} className="bg-black/60 backdrop-blur-xl border border-white/20 text-white py-3 px-6 rounded-full text-sm font-bold shadow-2xl hover:bg-black/80 transition-colors flex items-center gap-2"><Layers size={16} /> Project Details</button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  ))}
+                </div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+    const root = createRoot(document.getElementById('root'));
+    root.render(<PortfolioDeck />);
+  </script>
+</body>
+</html>
