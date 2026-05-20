@@ -383,6 +383,21 @@
         };
       }, [selectedId]);
 
+      // Mobile: tapping anywhere outside the cards deselects the lifted card.
+      // Tapping a different card still swaps lifts (because the check is "any
+      // card", not "the lifted card"). Listener only attaches when there's
+      // actually something to deselect.
+      useEffect(() => {
+        if (!isTouchDevice || selectedId || !hoveredId) return;
+        const onDocClick = (e) => {
+          if (!e.target.closest('[data-card-id]')) {
+            setHoveredId(null);
+          }
+        };
+        document.addEventListener('click', onDocClick);
+        return () => document.removeEventListener('click', onDocClick);
+      }, [isTouchDevice, selectedId, hoveredId]);
+
       const handleDeckMouseEnter = useCallback(() => {
         if (isTouchDevice) return;
         if (Date.now() < suppressFanUntilRef.current) return;
