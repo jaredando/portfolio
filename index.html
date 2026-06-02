@@ -379,28 +379,12 @@
     }
 
     .pill-button:focus-visible,
+    .deck-pile:focus-visible,
     .fan-card:focus-visible,
     .close-button:focus-visible,
     .project-action:focus-visible {
       outline: 3px solid #f2d88f;
       outline-offset: 4px;
-    }
-
-    .table-controls {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .control-count {
-      min-width: 82px;
-      color: rgba(245,237,218,0.7);
-      font-family: "DM Mono", ui-monospace, monospace;
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-align: center;
-      text-transform: uppercase;
     }
 
     .modal-backdrop {
@@ -578,16 +562,6 @@
       background: rgba(9, 45, 38, 0.92);
     }
 
-    .modal-nav {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      z-index: 60;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
     .desktop-note { display: block; }
     .mobile-hint { display: none; }
 
@@ -635,7 +609,6 @@
       .detail-actions { padding-top: 14px; }
       .project-action { min-height: 43px; font-size: 8px; }
       .close-button { top: 18px; right: 18px; width: 44px; height: 44px; }
-      .modal-nav { bottom: 17px; }
     }
 
     @media (max-height: 700px) {
@@ -661,17 +634,13 @@
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+    import React, { useCallback, useEffect, useRef, useState } from "react";
     import { createRoot } from "react-dom/client";
     import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
     import {
       ArrowUpRight,
-      ChevronLeft,
-      ChevronRight,
       Github,
       Layers3,
-      MoveHorizontal,
-      Shuffle,
       X
     } from "lucide-react";
 
@@ -729,22 +698,6 @@
     const spring = { type: "spring", stiffness: 310, damping: 28, mass: 0.78 };
     const instant = { duration: 0 };
 
-    function wrapIndex(index, length) {
-      return (index + length) % length;
-    }
-
-    function shuffled(items) {
-      const copy = [...items];
-      for (let index = copy.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(Math.random() * (index + 1));
-        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
-      }
-      if (copy.every((item, index) => item.id === items[index].id)) {
-        copy.push(copy.shift());
-      }
-      return copy;
-    }
-
     function CardBack() {
       return (
         <div className="playing-card card-back" aria-hidden="true">
@@ -775,12 +728,12 @@
       );
     }
 
-    function DealPile({ onDeal, reducedMotion }) {
+    function DealPile({ onDeal, reducedMotion, hasOpened }) {
       return (
         <motion.button
           className="deck-pile"
           type="button"
-          aria-label="Deal the project deck"
+          aria-label={hasOpened ? "Open the project deck again" : "Open the project deck"}
           onClick={onDeal}
           initial={reducedMotion ? false : { opacity: 0, y: -70, rotateZ: -5 }}
           animate={{ opacity: 1, y: 0, rotateZ: -2 }}
@@ -804,7 +757,7 @@
           ))}
           <span className="deck-cta pill-button">
             <Layers3 size={15} />
-            Deal the deck
+            {hasOpened ? "Open the deck again" : "Open the deck"}
           </span>
         </motion.button>
       );
@@ -816,21 +769,21 @@
       count,
       current,
       compact,
+      touchMode,
       onPick,
-      onNavigate,
       onMakeCurrent,
+      onClearCurrent,
       reducedMotion
     }) {
       const offset = index - ((count - 1) / 2);
-      const spacing = compact ? 58 : 126;
+      const spacing = compact ? 60 : 132;
       const rotation = compact ? 8.5 : 10;
-      const x = offset * spacing;
-      const y = Math.abs(offset) * (compact ? 14 : 25) + (current ? -22 : 0);
-      const rotateZ = offset * rotation;
+      const x = current && compact ? 0 : offset * spacing;
+      const y = Math.abs(offset) * (compact ? 14 : 25) + (current ? (compact ? -68 : -34) : 0);
+      const rotateZ = current ? 0 : offset * rotation;
 
       const handleDragEnd = (_, info) => {
-        if (info.offset.x < -58 || info.velocity.x < -520) onNavigate(1);
-        if (info.offset.x > 58 || info.velocity.x > 520) onNavigate(-1);
+        if (info.offset.y < -58 || info.velocity.y < -480) onPick(project);
       };
 
       return (
@@ -847,19 +800,29 @@
             rotateZ,
             opacity: 1,
             scale: current ? 1.04 : 1,
-            zIndex: current ? 20 : count - Math.abs(offset)
+            zIndex: current ? 30 : index + 1
+          }}
+          exit={{
+            x: 0,
+            y: 44,
+            rotateZ: index % 2 === 0 ? -1.5 : 1.5,
+            opacity: 0,
+            scale: 0.86,
+            transition: reducedMotion ? instant : { ...spring, delay: (count - index) * 0.035 }
           }}
           whileHover={reducedMotion ? undefined : { y: y - 18, scale: current ? 1.075 : 1.045 }}
           whileTap={reducedMotion ? undefined : { scale: 0.99 }}
           whileDrag={reducedMotion ? undefined : { scale: 1.08, y: y - 18, cursor: "grabbing" }}
-          drag={!reducedMotion && current ? "x" : false}
-          dragConstraints={{ left: -150, right: 150 }}
+          drag={!reducedMotion && current}
+          dragConstraints={{ left: -36, right: 36, top: -110, bottom: 24 }}
           dragElastic={0.16}
           dragSnapToOrigin
           onDragEnd={handleDragEnd}
-          onFocus={onMakeCurrent}
+          onMouseEnter={() => !touchMode && !compact && onMakeCurrent()}
+          onMouseLeave={onClearCurrent}
+          onFocus={() => !touchMode && !compact && onMakeCurrent()}
           onClick={() => onPick(project)}
-          transition={reducedMotion ? instant : spring}
+          transition={reducedMotion ? instant : { ...spring, delay: index * 0.045 }}
         >
           <CardFront project={project} />
         </motion.button>
@@ -920,7 +883,7 @@
       );
     }
 
-    function PickedCard({ project, onClose, onNavigate, reducedMotion }) {
+    function PickedCard({ project, onClose, reducedMotion }) {
       const closeRef = useRef(null);
 
       useEffect(() => {
@@ -977,22 +940,6 @@
               </motion.div>
             </motion.div>
           </div>
-
-          <motion.div
-            className="modal-nav"
-            initial={reducedMotion ? false : { opacity: 0, x: "-50%", y: 12 }}
-            animate={{ opacity: 1, x: "-50%", y: 0 }}
-            exit={{ opacity: 0, x: "-50%", y: 12 }}
-            transition={reducedMotion ? instant : { duration: 0.2, delay: 0.22 }}
-          >
-            <button className="pill-button" type="button" onClick={() => onNavigate(-1)} aria-label="Previous project">
-              <ChevronLeft size={16} />
-            </button>
-            <span className="control-count">Next card</span>
-            <button className="pill-button" type="button" onClick={() => onNavigate(1)} aria-label="Next project">
-              <ChevronRight size={16} />
-            </button>
-          </motion.div>
         </>
       );
     }
@@ -1000,95 +947,60 @@
     function PortfolioTable() {
       const reducedMotion = useReducedMotion();
       const [dealt, setDealt] = useState(false);
-      const [order, setOrder] = useState(projects);
-      const [currentIndex, setCurrentIndex] = useState(0);
+      const [hasOpened, setHasOpened] = useState(false);
+      const [highlightedId, setHighlightedId] = useState(null);
       const [selected, setSelected] = useState(null);
       const [compact, setCompact] = useState(() => window.innerWidth < 760);
+      const [touchMode, setTouchMode] = useState(() => window.matchMedia("(hover: none), (pointer: coarse)").matches);
       const [announcement, setAnnouncement] = useState("Project deck ready");
 
-      const currentProject = order[currentIndex];
-
       useEffect(() => {
+        const pointerQuery = window.matchMedia("(hover: none), (pointer: coarse)");
         const onResize = () => setCompact(window.innerWidth < 760);
+        const onPointerChange = () => setTouchMode(pointerQuery.matches);
         window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
+        pointerQuery.addEventListener?.("change", onPointerChange);
+        return () => {
+          window.removeEventListener("resize", onResize);
+          pointerQuery.removeEventListener?.("change", onPointerChange);
+        };
       }, []);
-
-      const navigate = useCallback((stepOrIndex) => {
-        setCurrentIndex((previous) => {
-          const next = Math.abs(stepOrIndex) > 1
-            ? wrapIndex(stepOrIndex, order.length)
-            : wrapIndex(previous + stepOrIndex, order.length);
-          setAnnouncement(`${order[next].title} selected`);
-          return next;
-        });
-      }, [order]);
-
-      const navigateModal = useCallback((step) => {
-        setSelected((previous) => {
-          const index = order.findIndex((item) => item.id === previous.id);
-          const nextProject = order[wrapIndex(index + step, order.length)];
-          setCurrentIndex(order.findIndex((item) => item.id === nextProject.id));
-          setAnnouncement(`${nextProject.title} revealed`);
-          return nextProject;
-        });
-      }, [order]);
 
       const dealDeck = useCallback(() => {
+        setHasOpened(true);
         setDealt(true);
-        setAnnouncement("Deck dealt. Use arrow keys or swipe the highlighted card.");
+        setHighlightedId(null);
+        setAnnouncement("Deck open. Choose any project card.");
       }, []);
 
-      const shuffleDeck = useCallback(() => {
-        const next = shuffled(order);
-        setOrder(next);
-        setCurrentIndex(0);
-        setSelected(null);
-        setDealt(true);
-        setAnnouncement(`Deck shuffled. ${next[0].title} selected`);
-      }, [order]);
-
       const pickUp = useCallback((project) => {
+        if ((touchMode || compact) && highlightedId !== project.id) {
+          setHighlightedId(project.id);
+          setAnnouncement(`${project.title} drawn forward. Tap again to reveal it.`);
+          return;
+        }
+
+        setDealt(false);
         setSelected(project);
-        setCurrentIndex(order.findIndex((item) => item.id === project.id));
         setAnnouncement(`${project.title} revealed`);
-      }, [order]);
+      }, [compact, highlightedId, touchMode]);
+
+      const putBack = useCallback(() => {
+        setSelected(null);
+        setHighlightedId(null);
+        setAnnouncement("Project returned to the deck. Open it again to choose another card.");
+      }, []);
 
       useEffect(() => {
         const onKeyDown = (event) => {
           if (event.key === "Escape" && selected) {
-            setSelected(null);
-            return;
-          }
-
-          if (event.key === "ArrowLeft") {
-            event.preventDefault();
-            selected ? navigateModal(-1) : dealt && navigate(-1);
-          }
-
-          if (event.key === "ArrowRight") {
-            event.preventDefault();
-            selected ? navigateModal(1) : dealt && navigate(1);
-          }
-
-          if (event.key.toLowerCase() === "s" && !selected) {
-            event.preventDefault();
-            shuffleDeck();
-          }
-
-          if (event.key === "Enter" && dealt && !selected && document.activeElement === document.body) {
-            pickUp(currentProject);
+            putBack();
           }
         };
 
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-      }, [currentProject, dealt, navigate, navigateModal, pickUp, selected, shuffleDeck]);
-
-      const visibleCards = useMemo(
-        () => order.filter((project) => project.id !== selected?.id),
-        [order, selected]
-      );
+      }, [putBack, selected]);
 
       return (
         <main className="table-surface">
@@ -1109,7 +1021,7 @@
           <aside className="table-note desktop-note bottom-[11%] right-[7%] z-10" aria-label="How to use this portfolio">
             <p className="font-card mb-2 text-[27px] font-bold leading-none">Pick a card.</p>
             <p className="font-mono text-[9px] uppercase leading-[1.75] tracking-[0.13em]">
-              Deal the deck, shuffle through my work, then lift a card to reveal the project.
+              Open the deck, choose the card that catches your eye, then lift it to reveal the project.
             </p>
           </aside>
 
@@ -1124,23 +1036,23 @@
 
             <div className="stage" aria-label="Project card table">
               <AnimatePresence>
-                {!dealt && <DealPile key="deal-pile" onDeal={dealDeck} reducedMotion={reducedMotion} />}
+                {!dealt && <DealPile key="deal-pile" onDeal={dealDeck} reducedMotion={reducedMotion} hasOpened={hasOpened} />}
               </AnimatePresence>
 
               <AnimatePresence>
-                {dealt && visibleCards.map((project) => {
-                  const index = order.findIndex((item) => item.id === project.id);
+                {dealt && projects.map((project, index) => {
                   return (
                     <FanCard
                       key={project.id}
                       project={project}
                       index={index}
-                      count={order.length}
-                      current={currentProject.id === project.id}
+                      count={projects.length}
+                      current={highlightedId === project.id}
                       compact={compact}
+                      touchMode={touchMode}
                       onPick={pickUp}
-                      onNavigate={navigate}
-                      onMakeCurrent={() => setCurrentIndex(index)}
+                      onMakeCurrent={() => setHighlightedId(project.id)}
+                      onClearCurrent={() => !touchMode && !compact && setHighlightedId(null)}
                       reducedMotion={reducedMotion}
                     />
                   );
@@ -1151,23 +1063,11 @@
             <div className="relative z-20 mt-[-36px]">
               {dealt ? (
                 <>
-                  <div className="table-controls">
-                    <button className="pill-button" type="button" onClick={() => navigate(-1)} aria-label="Previous card">
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button className="pill-button" type="button" onClick={shuffleDeck}>
-                      <Shuffle size={15} />
-                      Shuffle
-                    </button>
-                    <button className="pill-button" type="button" onClick={() => navigate(1)} aria-label="Next card">
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
                   <p className="font-mono mobile-hint mt-4 text-center text-[8px] uppercase tracking-[0.2em] text-[#d8cdae99]">
-                    Swipe the raised card or tap to reveal
+                    Tap a card to draw it forward. Tap again to reveal.
                   </p>
                   <p className="font-mono desktop-note mt-4 text-center text-[8px] uppercase tracking-[0.2em] text-[#d8cdae99]">
-                    Swipe, use arrow keys, or press S to shuffle
+                    Hover over any card. Click or pull upward to reveal.
                   </p>
                 </>
               ) : (
@@ -1190,20 +1090,12 @@
             </a>
           </footer>
 
-          <div className="desktop-note absolute bottom-10 right-10 z-20">
-            <p className="font-mono flex items-center gap-2 text-[9px] uppercase tracking-[0.2em] text-[#d8cdaeaa]">
-              <MoveHorizontal size={14} />
-              Drag to browse
-            </p>
-          </div>
-
           <AnimatePresence>
             {selected && (
               <PickedCard
                 key={selected.id}
                 project={selected}
-                onClose={() => setSelected(null)}
-                onNavigate={navigateModal}
+                onClose={putBack}
                 reducedMotion={reducedMotion}
               />
             )}
