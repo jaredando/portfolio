@@ -296,63 +296,86 @@
       font-weight: 700;
     }
 
-    .card-preview-glass {
+    .detail-glass {
       position: relative;
-      width: 150px;
-      height: 108px;
-      margin-bottom: 17px;
+      width: 100%;
+      height: 150px;
+      margin: 14px 0 15px;
       overflow: hidden;
-      border: 1px solid rgba(24, 57, 49, 0.26);
-      border-radius: 48% / 38%;
+      border: 1px solid rgba(112, 91, 48, 0.42);
+      border-radius: 13px;
       background:
-        radial-gradient(circle at 50% 44%, rgba(255,255,255,0.86), rgba(212, 224, 210, 0.62) 55%, rgba(82, 111, 102, 0.48)),
-        #d9e2d6;
+        radial-gradient(circle at 46% 40%, rgba(255,255,255,0.84), rgba(211, 221, 207, 0.64) 52%, rgba(45, 85, 76, 0.5)),
+        #ccd9cf;
       box-shadow:
-        0 9px 18px rgba(44, 61, 52, 0.14),
-        inset 0 0 0 4px rgba(255,255,255,0.38),
-        inset 0 -12px 22px rgba(22, 67, 58, 0.22);
+        0 8px 15px rgba(44, 61, 52, 0.12),
+        0 0 0 4px rgba(214, 192, 141, 0.22),
+        0 0 0 5px rgba(56, 73, 62, 0.13),
+        inset 0 0 0 4px rgba(255,255,255,0.42),
+        inset 0 -12px 22px rgba(22, 67, 58, 0.28);
       isolation: isolate;
     }
 
-    .card-preview-glass iframe {
+    .detail-glass iframe {
       position: absolute;
       inset: 0;
-      width: 500%;
-      height: 500%;
+      width: 275%;
+      height: 275%;
       border: 0;
-      opacity: 0.46;
-      filter: saturate(0.62) contrast(0.88) sepia(0.18);
+      opacity: 0.8;
+      filter: saturate(0.66) contrast(0.9) brightness(0.96) sepia(0.14);
       pointer-events: none;
-      transform: scale(0.2);
+      transform: scale(0.364);
       transform-origin: top left;
-      transition: opacity 280ms ease, filter 280ms ease;
     }
 
-    .card-preview-glass::before {
+    .detail-glass::before {
       content: "";
       position: absolute;
       inset: 0;
       z-index: 2;
       pointer-events: none;
       background:
-        radial-gradient(circle at 50% 48%, transparent 38%, rgba(10, 48, 42, 0.24) 100%),
-        linear-gradient(145deg, rgba(255,255,255,0.58), transparent 31%, transparent 66%, rgba(255,255,255,0.18));
+        radial-gradient(ellipse at 50% 48%, transparent 42%, rgba(10, 48, 42, 0.3) 100%),
+        linear-gradient(145deg, rgba(255,255,255,0.72), transparent 25%, transparent 66%, rgba(255,255,255,0.2));
       mix-blend-mode: screen;
     }
 
-    .card-preview-suit {
+    .detail-glass::after {
+      content: "";
       position: absolute;
-      inset: 0;
+      inset: 5px;
       z-index: 3;
-      display: grid;
-      place-items: center;
-      font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: 48px;
-      font-weight: 700;
-      opacity: 0.62;
-      text-shadow: 0 2px 12px rgba(255,255,255,0.82);
-      mix-blend-mode: multiply;
+      border: 1px solid rgba(255,255,255,0.38);
+      border-radius: 9px;
       pointer-events: none;
+    }
+
+    .detail-glass-label {
+      position: absolute;
+      left: 13px;
+      bottom: 10px;
+      z-index: 4;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(250, 246, 231, 0.88);
+      font-family: "DM Mono", ui-monospace, monospace;
+      font-size: 7px;
+      letter-spacing: 0.18em;
+      line-height: 1;
+      text-shadow: 0 1px 8px rgba(2, 17, 14, 0.78);
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .detail-glass-dot {
+      width: 6px;
+      height: 6px;
+      border: 1px solid rgba(250, 246, 231, 0.82);
+      border-radius: 50%;
+      background: rgba(166, 217, 190, 0.72);
+      box-shadow: 0 0 0 3px rgba(166, 217, 190, 0.14);
     }
 
     .glass-sheen {
@@ -396,13 +419,8 @@
         inset 0 0 0 5px rgba(103, 76, 44, 0.08);
     }
 
-    .active-card .card-preview-glass iframe {
-      opacity: 0.68;
-      filter: saturate(0.82) contrast(0.94) sepia(0.08);
-    }
-
-    .active-card .glass-sheen {
-      animation: glass-pass 780ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    .detail-card .glass-sheen {
+      animation: glass-pass 980ms 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
     @keyframes glass-pass {
@@ -526,14 +544,14 @@
       display: flex;
       height: 100%;
       flex-direction: column;
-      padding: 34px 32px 30px;
+      padding: 28px 28px 24px;
     }
 
     .detail-title {
-      margin: 5px 0 12px;
+      margin: 4px 0 0;
       color: var(--ink);
       font-family: "Cormorant Garamond", Georgia, serif;
-      font-size: clamp(43px, 9vw, 58px);
+      font-size: clamp(39px, 8vw, 53px);
       font-weight: 700;
       letter-spacing: -0.065em;
       line-height: 0.83;
@@ -552,32 +570,32 @@
     .detail-desc {
       margin: 0;
       color: rgba(23,51,45,0.88);
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: 12px;
+      line-height: 1.52;
     }
 
     .detail-divider {
       width: 100%;
       height: 1px;
-      margin: 19px 0 16px;
+      margin: 13px 0 11px;
       background: rgba(23,51,45,0.16);
     }
 
     .tech-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 7px;
-      margin-top: 9px;
+      gap: 5px;
+      margin-top: 7px;
     }
 
     .tech-chip {
-      padding: 6px 8px;
+      padding: 5px 7px;
       border: 1px solid rgba(23,51,45,0.16);
       border-radius: 999px;
       color: rgba(23,51,45,0.78);
       background: rgba(255,255,255,0.18);
       font-family: "DM Mono", ui-monospace, monospace;
-      font-size: 8px;
+      font-size: 7px;
       letter-spacing: 0.11em;
       line-height: 1;
       text-transform: uppercase;
@@ -588,12 +606,12 @@
       grid-template-columns: 1fr 1fr;
       gap: 9px;
       margin-top: auto;
-      padding-top: 20px;
+      padding-top: 14px;
     }
 
     .project-action {
       display: inline-flex;
-      min-height: 46px;
+      min-height: 42px;
       align-items: center;
       justify-content: center;
       gap: 7px;
@@ -685,18 +703,17 @@
       .corner-suit { font-size: 16px; }
       .card-center { inset: 42px 18px; }
       .card-medallion { width: 60px; height: 60px; margin-bottom: 12px; font-size: 34px; }
-      .card-preview-glass { width: 116px; height: 82px; margin-bottom: 11px; }
-      .card-preview-suit { font-size: 38px; }
       .card-title { max-width: 150px; font-size: 25px; }
       .card-caption { margin-top: 9px; font-size: 7px; }
       .deck-cta { bottom: -74px; }
       .desktop-note { display: none; }
       .mobile-hint { display: block; }
 
-      .detail-content { padding: 31px 27px 27px; }
-      .detail-desc { font-size: 13px; }
-      .detail-divider { margin: 15px 0 13px; }
-      .detail-actions { padding-top: 14px; }
+      .detail-content { padding: 27px 26px 24px; }
+      .detail-glass { height: 138px; margin-top: 12px; margin-bottom: 13px; }
+      .detail-desc { font-size: 11.5px; }
+      .detail-divider { margin: 12px 0 10px; }
+      .detail-actions { padding-top: 12px; }
       .project-action { min-height: 43px; font-size: 8px; }
       .close-button { top: 18px; right: 18px; width: 44px; height: 44px; }
     }
@@ -704,8 +721,9 @@
     @media (max-height: 700px) {
       .stage { min-height: 450px; }
       .picked-card { height: min(520px, calc(100svh - 88px)); }
-      .detail-content { padding-top: 27px; padding-bottom: 22px; }
-      .detail-divider { margin: 13px 0 11px; }
+      .detail-content { padding-top: 22px; padding-bottom: 19px; }
+      .detail-glass { height: 116px; margin-top: 10px; margin-bottom: 10px; }
+      .detail-divider { margin: 10px 0 8px; }
       .tech-list { gap: 5px; margin-top: 7px; }
       .tech-chip { padding: 5px 7px; }
       .detail-actions { padding-top: 12px; }
@@ -796,9 +814,14 @@
       );
     }
 
-    function ProjectGlass({ project }) {
+    function DetailGlass({ project }) {
       return (
-        <div className="card-preview-glass">
+        <motion.div
+          className="detail-glass"
+          initial={{ opacity: 0, scale: 0.96, rotateX: -5 }}
+          animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+          transition={{ type: "spring", stiffness: 240, damping: 24, mass: 0.82, delay: 0.34 }}
+        >
           <iframe
             src={project.live}
             title={`${project.title} reflected live preview`}
@@ -807,13 +830,16 @@
             loading="lazy"
             sandbox="allow-scripts allow-same-origin"
           />
-          <span className="card-preview-suit" style={{ color: project.accent }}>{project.suit}</span>
+          <span className="detail-glass-label">
+            <span className="detail-glass-dot" />
+            Live reflection
+          </span>
           <span className="glass-sheen" />
-        </div>
+        </motion.div>
       );
     }
 
-    function CardFront({ project, showPreview = true }) {
+    function CardFront({ project }) {
       return (
         <div className="playing-card card-front" aria-hidden="true">
           <div className="corner corner-top" style={{ color: project.accent }}>
@@ -821,13 +847,9 @@
             <span className="corner-suit">{project.suit}</span>
           </div>
           <div className="card-center">
-            {showPreview ? (
-              <ProjectGlass project={project} />
-            ) : (
-              <div className="card-medallion" style={{ color: project.accent }}>
-                {project.suit}
-              </div>
-            )}
+            <div className="card-medallion" style={{ color: project.accent }}>
+              {project.suit}
+            </div>
             <h3 className="card-title">{project.title}</h3>
             <p className="card-caption">{project.kicker}</p>
           </div>
@@ -956,7 +978,7 @@
               </span>
             </div>
 
-            <div className="detail-divider" />
+            <DetailGlass project={project} />
             <p className="detail-desc">{project.description}</p>
             <div className="detail-divider" />
 
