@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Jared in Tech</title>
+  <meta name="theme-color" content="#102e27">
+  <meta name="description" content="Jared in Tech - a tactile deck of web projects.">
+  <title>Jared in Tech | Pick a Card</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script type="importmap">
     {
@@ -24,659 +26,1193 @@
   </script>
 
   <style>
-    html, body {
+    :root {
+      --felt: #123b32;
+      --felt-dark: #08251f;
+      --ink: #17332d;
+      --cream: #f5edda;
+      --cream-deep: #e8dcc2;
+      --gold: #d3b36a;
+      --rail: #321c13;
+      --rail-light: #6c3f27;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body, #root { min-height: 100%; }
+
+    html { background: var(--felt-dark); }
+
+    body {
       margin: 0;
-      background-color: #050505;
+      min-height: 100vh;
       overflow-x: hidden;
-      overscroll-behavior: none;
+      background: var(--felt-dark);
+      color: var(--cream);
+      font-family: "Space Grotesk", system-ui, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
-    .card-stage { will-change: transform; transform: translateZ(0); }
-    .card-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-    .font-display { font-family: 'Bebas Neue', system-ui, sans-serif; letter-spacing: 0.01em; }
-    .font-mono-pro { font-family: 'JetBrains Mono', ui-monospace, monospace; }
 
-    /* SVG noise texture as a CSS variable so we can reuse it */
-    .noise-layer {
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-      background-size: 200px 200px;
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; }
+
+    .table-surface {
+      position: relative;
+      min-height: 100svh;
+      isolation: isolate;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(62, 125, 102, 0.35), transparent 38%),
+        radial-gradient(circle at 50% 50%, transparent 42%, rgba(2, 17, 14, 0.72) 115%),
+        linear-gradient(135deg, #16483d, #0d312a 70%);
+    }
+
+    .table-surface::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      opacity: 0.38;
+      pointer-events: none;
+      background-image:
+        repeating-linear-gradient(2deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(92deg, rgba(0,0,0,0.035) 0 1px, transparent 1px 5px);
+      mix-blend-mode: soft-light;
+    }
+
+    .table-surface::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      z-index: -1;
+      border: 1px solid rgba(214, 184, 119, 0.28);
+      border-radius: 30px;
+      box-shadow:
+        inset 0 0 0 6px rgba(0,0,0,0.17),
+        inset 0 0 70px rgba(0,0,0,0.2),
+        0 0 0 14px rgba(48, 27, 18, 0.9),
+        0 0 0 18px rgba(114, 67, 41, 0.55);
+      pointer-events: none;
+    }
+
+    .font-card { font-family: "Cormorant Garamond", Georgia, serif; }
+    .font-mono { font-family: "DM Mono", ui-monospace, monospace; }
+
+    .brand-mark {
+      background: rgba(4, 24, 20, 0.45);
+      border: 1px solid rgba(232, 220, 194, 0.18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 25px rgba(0,0,0,0.16);
+      backdrop-filter: blur(12px);
+    }
+
+    .table-note {
+      position: absolute;
+      width: min(245px, 36vw);
+      padding: 18px 20px 16px;
+      color: #4b3822;
+      background:
+        linear-gradient(150deg, rgba(255,255,255,0.45), transparent 35%),
+        #e8d7aa;
+      box-shadow: 0 15px 24px rgba(0,0,0,0.2);
+      transform: rotate(-4deg);
+    }
+
+    .table-note::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(91, 66, 37, 0.22);
+      pointer-events: none;
+    }
+
+    .table-note::after {
+      content: "";
+      position: absolute;
+      top: -9px;
+      left: 50%;
+      width: 48px;
+      height: 18px;
+      transform: translateX(-50%) rotate(2deg);
+      background: rgba(236, 217, 166, 0.55);
+      border: 1px solid rgba(126, 98, 53, 0.12);
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      min-height: 590px;
+      perspective: 1500px;
+      perspective-origin: center 46%;
+    }
+
+    .fan-card {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      width: 248px;
+      height: 354px;
+      margin-left: -124px;
+      margin-top: -177px;
+      cursor: grab;
+      touch-action: pan-y;
+      transform-origin: center 120%;
+      will-change: transform;
+    }
+
+    .fan-card:active { cursor: grabbing; }
+
+    .card-shell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+    }
+
+    .playing-card {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 16px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .card-front {
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255,255,255,0.58), transparent 42%),
+        linear-gradient(145deg, #fbf6e9, var(--cream) 48%, #ede2ca);
+      border: 1px solid rgba(255,255,255,0.72);
+      box-shadow:
+        0 18px 24px rgba(0,0,0,0.27),
+        0 3px 2px rgba(0,0,0,0.18),
+        inset 0 0 0 5px rgba(103, 76, 44, 0.08);
+    }
+
+    .card-front::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border: 1px solid rgba(33, 66, 57, 0.2);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    .card-front::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.14;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(61, 47, 28, 0.08) 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(90deg, rgba(61, 47, 28, 0.05) 0 1px, transparent 1px 5px);
+      mix-blend-mode: multiply;
+    }
+
+    .card-back {
+      padding: 12px;
+      background: #ede1c8;
+      border: 1px solid rgba(255,255,255,0.72);
+      box-shadow:
+        0 18px 24px rgba(0,0,0,0.3),
+        0 3px 2px rgba(0,0,0,0.2),
+        inset 0 0 0 4px rgba(103, 76, 44, 0.08);
+    }
+
+    .card-back-pattern {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border: 2px solid rgba(232, 220, 194, 0.82);
+      border-radius: 9px;
+      background-color: #173b36;
+      background-image:
+        linear-gradient(45deg, rgba(213, 181, 106, 0.28) 25%, transparent 25%, transparent 75%, rgba(213, 181, 106, 0.28) 75%),
+        linear-gradient(-45deg, rgba(213, 181, 106, 0.22) 25%, transparent 25%, transparent 75%, rgba(213, 181, 106, 0.22) 75%);
+      background-position: 0 0, 11px 11px;
+      background-size: 22px 22px;
+      box-shadow: inset 0 0 0 4px #173b36, inset 0 0 0 6px rgba(232,220,194,0.72);
+    }
+
+    .card-back-pattern::before,
+    .card-back-pattern::after {
+      content: "";
+      position: absolute;
+      inset: 15%;
+      border: 1px solid rgba(232,220,194,0.66);
+      border-radius: 50%;
+      transform: rotate(45deg);
+    }
+
+    .card-back-pattern::after {
+      inset: 27%;
+      border-radius: 10px;
+      background: rgba(15, 49, 43, 0.46);
+    }
+
+    .corner {
+      position: absolute;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 40px;
+      gap: 1px;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-weight: 700;
+      line-height: 0.82;
+    }
+
+    .corner-top { top: 17px; left: 12px; }
+    .corner-bottom { right: 12px; bottom: 17px; transform: rotate(180deg); }
+    .corner-rank { font-size: 28px; }
+    .corner-suit { font-size: 20px; }
+
+    .card-center {
+      position: absolute;
+      inset: 53px 25px;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .card-medallion {
+      display: grid;
+      width: 82px;
+      height: 82px;
+      margin-bottom: 18px;
+      place-items: center;
+      border: 1px solid rgba(24, 57, 49, 0.2);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      box-shadow: inset 0 0 0 5px rgba(255,255,255,0.22);
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 44px;
+      font-weight: 700;
+    }
+
+    .card-title {
+      max-width: 190px;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 33px;
+      font-weight: 700;
+      line-height: 0.88;
+      letter-spacing: -0.05em;
+    }
+
+    .card-caption {
+      margin-top: 13px;
+      font-family: "DM Mono", ui-monospace, monospace;
+      font-size: 8px;
+      letter-spacing: 0.22em;
+      line-height: 1.5;
+      text-transform: uppercase;
+      opacity: 0.68;
+    }
+
+    .active-card .card-front {
+      box-shadow:
+        0 28px 35px rgba(0,0,0,0.35),
+        0 4px 2px rgba(0,0,0,0.2),
+        0 0 0 2px rgba(211, 179, 106, 0.45),
+        inset 0 0 0 5px rgba(103, 76, 44, 0.08);
+    }
+
+    .deck-pile {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      width: 248px;
+      height: 354px;
+      margin-left: -124px;
+      margin-top: -177px;
+      cursor: pointer;
+      border: 0;
+      border-radius: 16px;
+      background: transparent;
+      color: inherit;
+    }
+
+    .deck-layer {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+    }
+
+    .deck-cta {
+      position: absolute;
+      left: 50%;
+      bottom: -82px;
+      width: max-content;
+      transform: translateX(-50%);
+    }
+
+    .pill-button {
+      display: inline-flex;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 16px;
+      cursor: pointer;
+      border: 1px solid rgba(232, 220, 194, 0.2);
+      border-radius: 999px;
+      background: rgba(4, 25, 21, 0.62);
+      color: var(--cream);
+      box-shadow: 0 12px 22px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+      font-family: "DM Mono", ui-monospace, monospace;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+      backdrop-filter: blur(12px);
+    }
+
+    .pill-button:hover {
+      border-color: rgba(232, 220, 194, 0.48);
+      background: rgba(8, 39, 33, 0.86);
+    }
+
+    .pill-button:focus-visible,
+    .fan-card:focus-visible,
+    .close-button:focus-visible,
+    .project-action:focus-visible {
+      outline: 3px solid #f2d88f;
+      outline-offset: 4px;
+    }
+
+    .table-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .control-count {
+      min-width: 82px;
+      color: rgba(245,237,218,0.7);
+      font-family: "DM Mono", ui-monospace, monospace;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(2, 13, 11, 0.82);
+      backdrop-filter: blur(8px);
+    }
+
+    .picked-wrap {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      pointer-events: none;
+      perspective: 1800px;
+    }
+
+    .picked-card {
+      position: relative;
+      width: min(390px, calc(100vw - 36px));
+      height: min(560px, calc(100svh - 110px));
+      pointer-events: auto;
+    }
+
+    .detail-card {
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 50% 35%, rgba(255,255,255,0.68), transparent 47%),
+        linear-gradient(145deg, #fbf6e9, var(--cream) 48%, #e9dcc1);
+      border: 1px solid rgba(255,255,255,0.75);
+      box-shadow: 0 30px 70px rgba(0,0,0,0.48), inset 0 0 0 6px rgba(103, 76, 44, 0.08);
+      transform: rotateY(180deg);
+    }
+
+    .detail-card::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border: 1px solid rgba(33, 66, 57, 0.22);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    .detail-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      height: 100%;
+      flex-direction: column;
+      padding: 34px 32px 30px;
+    }
+
+    .detail-title {
+      margin: 5px 0 12px;
+      color: var(--ink);
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: clamp(43px, 9vw, 58px);
+      font-weight: 700;
+      letter-spacing: -0.065em;
+      line-height: 0.83;
+    }
+
+    .detail-kicker,
+    .detail-label {
+      color: rgba(23,51,45,0.68);
+      font-family: "DM Mono", ui-monospace, monospace;
+      font-size: 9px;
+      letter-spacing: 0.19em;
+      line-height: 1.55;
+      text-transform: uppercase;
+    }
+
+    .detail-desc {
+      margin: 0;
+      color: rgba(23,51,45,0.88);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .detail-divider {
+      width: 100%;
+      height: 1px;
+      margin: 19px 0 16px;
+      background: rgba(23,51,45,0.16);
+    }
+
+    .tech-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 9px;
+    }
+
+    .tech-chip {
+      padding: 6px 8px;
+      border: 1px solid rgba(23,51,45,0.16);
+      border-radius: 999px;
+      color: rgba(23,51,45,0.78);
+      background: rgba(255,255,255,0.18);
+      font-family: "DM Mono", ui-monospace, monospace;
+      font-size: 8px;
+      letter-spacing: 0.11em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .detail-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: auto;
+      padding-top: 20px;
+    }
+
+    .project-action {
+      display: inline-flex;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: 1px solid rgba(23,51,45,0.2);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255,255,255,0.2);
+      font-family: "DM Mono", ui-monospace, monospace;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+    }
+
+    .project-action:hover {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--cream);
+    }
+
+    .project-action-primary {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--cream);
+    }
+
+    .project-action-primary:hover {
+      border-color: #285a50;
+      background: #285a50;
+    }
+
+    .close-button {
+      position: fixed;
+      top: 28px;
+      right: 28px;
+      z-index: 60;
+      display: grid;
+      width: 48px;
+      height: 48px;
+      cursor: pointer;
+      place-items: center;
+      border: 1px solid rgba(232, 220, 194, 0.24);
+      border-radius: 50%;
+      color: var(--cream);
+      background: rgba(4, 25, 21, 0.72);
+      transition: background-color 180ms ease, border-color 180ms ease;
+      backdrop-filter: blur(12px);
+    }
+
+    .close-button:hover {
+      border-color: rgba(232, 220, 194, 0.52);
+      background: rgba(9, 45, 38, 0.92);
+    }
+
+    .modal-nav {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .desktop-note { display: block; }
+    .mobile-hint { display: none; }
+
+    @media (max-width: 760px) {
+      .table-surface::after {
+        inset: 8px;
+        border-radius: 21px;
+        box-shadow:
+          inset 0 0 0 4px rgba(0,0,0,0.17),
+          inset 0 0 46px rgba(0,0,0,0.2),
+          0 0 0 7px rgba(48, 27, 18, 0.92),
+          0 0 0 10px rgba(114, 67, 41, 0.52);
+      }
+
+      .stage { min-height: 500px; }
+
+      .fan-card,
+      .deck-pile {
+        width: 184px;
+        height: 266px;
+        margin-left: -92px;
+        margin-top: -133px;
+      }
+
+      .playing-card { border-radius: 13px; }
+      .card-front::before { inset: 6px; border-radius: 8px; }
+      .card-back { padding: 9px; }
+      .card-back-pattern { border-radius: 7px; }
+      .corner { width: 31px; }
+      .corner-top { top: 13px; left: 9px; }
+      .corner-bottom { right: 9px; bottom: 13px; }
+      .corner-rank { font-size: 22px; }
+      .corner-suit { font-size: 16px; }
+      .card-center { inset: 42px 18px; }
+      .card-medallion { width: 60px; height: 60px; margin-bottom: 12px; font-size: 34px; }
+      .card-title { max-width: 150px; font-size: 25px; }
+      .card-caption { margin-top: 9px; font-size: 7px; }
+      .deck-cta { bottom: -74px; }
+      .desktop-note { display: none; }
+      .mobile-hint { display: block; }
+
+      .detail-content { padding: 31px 27px 27px; }
+      .detail-desc { font-size: 13px; }
+      .detail-divider { margin: 15px 0 13px; }
+      .detail-actions { padding-top: 14px; }
+      .project-action { min-height: 43px; font-size: 8px; }
+      .close-button { top: 18px; right: 18px; width: 44px; height: 44px; }
+      .modal-nav { bottom: 17px; }
+    }
+
+    @media (max-height: 700px) {
+      .stage { min-height: 450px; }
+      .picked-card { height: min(520px, calc(100svh - 88px)); }
+      .detail-content { padding-top: 27px; padding-bottom: 22px; }
+      .detail-divider { margin: 13px 0 11px; }
+      .tech-list { gap: 5px; margin-top: 7px; }
+      .tech-chip { padding: 5px 7px; }
+      .detail-actions { padding-top: 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
-<body class="text-zinc-100 antialiased selection:bg-zinc-800 selection:text-white">
-
+<body>
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useRef, useCallback, memo } from "react";
+    import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
     import { createRoot } from "react-dom/client";
-    import { motion, AnimatePresence } from "framer-motion";
-    import { Github, ExternalLink, X, ChevronRight, Layers, ArrowUpRight } from "lucide-react";
+    import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+    import {
+      ArrowUpRight,
+      ChevronLeft,
+      ChevronRight,
+      Github,
+      Layers3,
+      MoveHorizontal,
+      Shuffle,
+      X
+    } from "lucide-react";
 
     const projects = [
       {
-        id: "project-1",
+        id: "team-sheet",
         title: "Team Sheet",
-        role: "Creator",
-        face: "♠ A",
-        color: "#22c55e",
+        rank: "A",
+        suit: "\u2660",
+        accent: "#2f7d67",
+        kicker: "Match-day board",
+        description: "A drag-and-drop AFL team selection board with an oval layout, magnet-style player tokens, multi-board persistence and a locked read-only view for visitors.",
         tech: ["HTML5", "SVG", "JavaScript", "npoint.io"],
-        desc: "Drag-and-drop AFL team selection board with an SVG oval, magnet-style player tokens, multi-board persistence and coach access. Built for fast match-day selection on mobile.",
-        repo: "github.com/jaredando/AFLselector",
-        live: "jaredando.github.io/AFLselector/?view=1"
+        repo: "https://github.com/jaredando/AFLselector",
+        live: "https://jaredando.github.io/AFLselector/?view=1"
       },
       {
-        id: "project-2",
+        id: "outsider",
         title: "Outsider",
-        role: "Creator",
-        face: "♥ K",
-        color: "#ef4444",
+        rank: "K",
+        suit: "\u2665",
+        accent: "#b64b4b",
+        kicker: "Social deduction game",
+        description: "A Spyfall-meets-mafia party game with Locations, TV, Movies and AI modes. Players hold to peek at their role, then bluff, vote and try to spot the outsider.",
         tech: ["HTML5", "JavaScript", "Anthropic API", "Gemini API"],
-        desc: "Spyfall-meets-mafia party game with Locations, TV, Movies and AI modes. Hold-to-peek card reveal, timer, voting flow and an AI mode that generates any scenario on demand.",
-        repo: "github.com/jaredando/Outsider",
-        live: "jaredando.github.io/Outsider"
+        repo: "https://github.com/jaredando/Outsider",
+        live: "https://jaredando.github.io/Outsider"
       },
       {
-        id: "project-3",
+        id: "invoicer",
         title: "Invoicer",
-        role: "Creator",
-        face: "♣ Q",
-        color: "#0ea5e9",
+        rank: "Q",
+        suit: "\u2663",
+        accent: "#327f9a",
+        kicker: "Sole trader utility",
+        description: "A zero-friction invoice maker for Australian sole traders. It includes saved profiles, client records, ABN and BSB fields, line items and one-click PDF export.",
         tech: ["HTML5", "JavaScript", "PDF Export", "LocalStorage"],
-        desc: "Zero-friction invoicing for Australian sole traders. Saved profiles, client book, BSB/ABN fields, line items and one-click PDF export — entirely client-side, no signup.",
-        repo: "github.com/jaredando/soletrader",
-        live: "jaredando.github.io/soletrader"
+        repo: "https://github.com/jaredando/soletrader",
+        live: "https://jaredando.github.io/soletrader"
       },
       {
-        id: "project-4",
+        id: "squad-logic",
         title: "SquadLogic",
-        role: "Creator",
-        face: "♦ J",
-        color: "#f59e0b",
+        rank: "J",
+        suit: "\u2666",
+        accent: "#b47a2f",
+        kicker: "Squad management tool",
+        description: "A game-day squad management tool for AFL coaches, built to make selection logic easier to reason about when a match-day list starts getting complicated.",
         tech: ["HTML5", "JavaScript", "CSS"],
-        desc: "Squad management and game-day logic tool for AFL coaches.",
-        repo: "github.com/jaredando/SquadLogic",
-        live: "jaredando.github.io/SquadLogic"
+        repo: "https://github.com/jaredando/SquadLogic",
+        live: "https://jaredando.github.io/SquadLogic"
       }
     ];
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Card
-    // ──────────────────────────────────────────────────────────────────────
-    const Card = memo(function Card({
-      project, index, centerIndex, totalCards,
-      isSelected, isHovered, isDeckFanned, isTouchDevice,
-      onClick, onMouseEnter,
-      cardWidth, cardHeight,
-      fanOffsetX, fanRotateMul, fanYDropMul
-    }) {
-      const [dealt, setDealt] = useState(false);
-      const [previewLoaded, setPreviewLoaded] = useState(false);
+    const spring = { type: "spring", stiffness: 310, damping: 28, mass: 0.78 };
+    const instant = { duration: 0 };
 
-      useEffect(() => {
-        const t = setTimeout(() => setDealt(true), 250 + index * 110);
-        return () => clearTimeout(t);
-      }, [index]);
+    function wrapIndex(index, length) {
+      return (index + length) % length;
+    }
 
-      const offset = index - centerIndex;
-      let rotateZ = offset * 2;
-      let x = offset * 2;
-      let y = Math.abs(offset) * 1;
-      let zIndex = totalCards - Math.abs(offset);
-      if (isDeckFanned) {
-        rotateZ = offset * fanRotateMul;
-        x = offset * fanOffsetX;
-        y = Math.abs(offset) * fanYDropMul;
+    function shuffled(items) {
+      const copy = [...items];
+      for (let index = copy.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
       }
-      if (isHovered) {
-        rotateZ = 0;
-        y = isTouchDevice ? -130 : -90;
-        zIndex = 100;
+      if (copy.every((item, index) => item.id === items[index].id)) {
+        copy.push(copy.shift());
       }
+      return copy;
+    }
 
-      const [symbol, rank] = project.face.split(' ');
-      const projectNum = `No.${String(index + 1).padStart(2, '0')}`;
-
-      const flipToBack = isHovered && !isSelected && !isTouchDevice;
-      const mobileTilt = isHovered && !isSelected && isTouchDevice;
-
-      const animateState = !dealt
-        ? { y: -300, x: 0, opacity: 0, scale: 0.82, rotateZ: 0 }
-        : {
-            rotateZ: isSelected ? 0 : rotateZ,
-            y: isSelected ? 0 : y,
-            x: isSelected ? 0 : x,
-            scale: isHovered && !isSelected ? (isTouchDevice ? 1.1 : 1.04) : 1,
-            opacity: isSelected ? 0 : 1,
-            zIndex
-          };
-
+    function CardBack() {
       return (
-        <motion.div
-          data-card-id={project.id}
-          className="absolute top-1/2 left-1/2 cursor-pointer card-stage"
-          style={{
-            width: cardWidth,
-            height: cardHeight,
-            marginTop: -cardHeight / 2,
-            marginLeft: -cardWidth / 2,
-            transformOrigin: "bottom center"
-          }}
-          initial={{ y: -300, opacity: 0, scale: 0.82 }}
-          animate={animateState}
-          transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.8 }}
-          onMouseEnter={onMouseEnter}
-          onClick={onClick}
-        >
-          <motion.div
-            className="w-full h-full relative"
-            style={{ transformStyle: "preserve-3d" }}
-            animate={{ rotateY: flipToBack ? 180 : (mobileTilt ? -8 : 0) }}
-            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-          >
-
-            {/* ═══════════════ FRONT ═══════════════ */}
-            <div
-              className="card-face absolute inset-0 w-full h-full rounded-2xl overflow-hidden flex flex-col p-4 md:p-5"
-              style={{
-                background: "linear-gradient(140deg, #0e0e10 0%, #0a0a0c 50%, #131316 100%)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                boxShadow: isHovered && !isSelected
-                  ? `0 30px 60px rgba(0,0,0,0.6), 0 0 80px ${project.color}40, inset 0 1px 0 rgba(255,255,255,0.06)`
-                  : "0 14px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)",
-                transition: "box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1)"
-              }}
-            >
-              {/* Layer 1 — radial color glow from top */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `radial-gradient(ellipse 80% 50% at 50% 0%, ${project.color}26, transparent 60%)`
-                }}
-              />
-
-              {/* Layer 2 — diagonal sheen */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `linear-gradient(135deg, transparent 25%, rgba(255,255,255,0.05) 50%, transparent 75%)`
-                }}
-              />
-
-              {/* Layer 3 — noise grain */}
-              <div className="absolute inset-0 pointer-events-none noise-layer opacity-[0.04] mix-blend-overlay" />
-
-              {/* Layer 4 — inner stroke (subtle bevel) */}
-              <div className="absolute inset-[1px] rounded-[15px] pointer-events-none"
-                style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.02)" }}
-              />
-
-              {/* TOP ROW */}
-              <div className="relative flex justify-between items-start z-10">
-                <div className="flex flex-col">
-                  <span className="text-3xl font-bold text-zinc-100 leading-none">{rank}</span>
-                  <span className="text-lg mt-1 leading-none" style={{ color: project.color }}>{symbol}</span>
-                </div>
-                <span className="text-[9px] font-mono-pro uppercase tracking-[0.2em] text-zinc-500 mt-1">
-                  {projectNum}
-                </span>
-              </div>
-
-              {/* CENTER */}
-              <div className="relative flex-1 flex flex-col items-center justify-center z-10 px-1 text-center">
-                <h3
-                  className="font-display text-white leading-[0.9]"
-                  style={{
-                    fontSize: cardWidth < 220 ? '2.25rem' : '3rem',
-                    textShadow: `0 2px 20px ${project.color}40`
-                  }}
-                >
-                  {project.title}
-                </h3>
-                <div
-                  className="mt-3 text-[9px] md:text-[10px] font-mono-pro uppercase tracking-[0.3em] flex items-center gap-2"
-                  style={{ color: project.color }}
-                >
-                  <span className="opacity-50">—</span>
-                  <span>{project.role}</span>
-                  <span className="opacity-50">—</span>
-                </div>
-              </div>
-
-              {/* BOTTOM ROW (rotated 180 for that classic card mirroring) */}
-              <div className="relative flex justify-between items-end z-10 rotate-180">
-                <div className="flex flex-col">
-                  <span className="text-3xl font-bold text-zinc-100 leading-none">{rank}</span>
-                  <span className="text-lg mt-1 leading-none" style={{ color: project.color }}>{symbol}</span>
-                </div>
-                <span className="text-[9px] font-mono-pro uppercase tracking-[0.2em] text-zinc-500 mt-1">
-                  {projectNum}
-                </span>
-              </div>
-
-              {/* Mobile-only floating hint */}
-              {mobileTilt && (
-                <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30">
-                  <span className="text-[9px] font-mono-pro uppercase tracking-[0.2em] text-zinc-100 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/15 whitespace-nowrap">
-                    Tap again to open
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* ═══════════════ BACK — desktop only, live iframe preview ═══════════════ */}
-            {!isTouchDevice && (
-              <div
-                className="card-face absolute inset-0 w-full h-full bg-zinc-950 rounded-2xl overflow-hidden"
-                style={{
-                  transform: "rotateY(180deg)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                  boxShadow: "0 30px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)"
-                }}
-              >
-                {/* Color fallback while iframe loads */}
-                <div
-                  className="absolute inset-0 transition-opacity duration-500"
-                  style={{
-                    background: `linear-gradient(135deg, ${project.color}33, ${project.color}11 60%, #0a0a0c)`,
-                    opacity: previewLoaded ? 0 : 1
-                  }}
-                />
-
-                {/* Live iframe — renders site at ~4x card size then scales to fit */}
-                <div className="absolute inset-0 overflow-hidden">
-                  <iframe
-                    src={`https://${project.live}`}
-                    title={`${project.title} preview`}
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    scrolling="no"
-                    onLoad={() => setPreviewLoaded(true)}
-                    sandbox="allow-scripts allow-same-origin"
-                    style={{
-                      width: '400%',
-                      height: '400%',
-                      border: 'none',
-                      transform: 'scale(0.25)',
-                      transformOrigin: 'top left',
-                      pointerEvents: 'none',
-                      opacity: previewLoaded ? 1 : 0,
-                      transition: 'opacity 0.5s ease-out'
-                    }}
-                  />
-                </div>
-
-                {/* Bottom gradient + CTA */}
-                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 right-0 p-5 z-20">
-                  <div
-                    className="text-[9px] font-mono-pro uppercase tracking-[0.25em] mb-2 opacity-80"
-                    style={{ color: project.color }}
-                  >
-                    Live preview
-                  </div>
-                  <h3
-                    className="font-display text-white leading-none mb-3 text-3xl"
-                    style={{ textShadow: `0 2px 20px ${project.color}66` }}
-                  >
-                    {project.title}
-                  </h3>
-                  <p className="text-[10px] text-zinc-400 font-mono-pro uppercase tracking-[0.2em] flex items-center gap-1">
-                    Click to open <ChevronRight size={12} />
-                  </p>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </motion.div>
-      );
-    });
-
-    // ──────────────────────────────────────────────────────────────────────
-    // PortfolioDeck
-    // ──────────────────────────────────────────────────────────────────────
-    function PortfolioDeck() {
-      const [selectedId, setSelectedId] = useState(null);
-      const [hoveredId, setHoveredId] = useState(null);
-      const [isDeckFanned, setIsDeckFanned] = useState(false);
-      const [isPlayingDemo, setIsPlayingDemo] = useState(false);
-      const [iframeBlocked, setIframeBlocked] = useState(false);
-      const [iframeLoaded, setIframeLoaded] = useState(false);
-      const [isTouchDevice, setIsTouchDevice] = useState(false);
-      const [viewport, setViewport] = useState({ w: typeof window !== "undefined" ? window.innerWidth : 1200 });
-
-      const suppressFanUntilRef = useRef(0);
-      const iframeWatchdogRef = useRef(null);
-      const iframeLoadedRef = useRef(false);
-
-      useEffect(() => {
-        const mq = window.matchMedia('(hover: none), (pointer: coarse)');
-        const update = () => setIsTouchDevice(mq.matches);
-        update();
-        mq.addEventListener?.('change', update);
-        const onResize = () => setViewport({ w: window.innerWidth });
-        window.addEventListener('resize', onResize);
-        return () => {
-          mq.removeEventListener?.('change', update);
-          window.removeEventListener('resize', onResize);
-        };
-      }, []);
-
-      useEffect(() => {
-        if (selectedId) {
-          document.body.style.overflow = "hidden";
-          setIsPlayingDemo(false);
-          setIframeBlocked(false);
-          setIframeLoaded(false);
-          iframeLoadedRef.current = false;
-          clearTimeout(iframeWatchdogRef.current);
-          iframeWatchdogRef.current = setTimeout(() => {
-            if (!iframeLoadedRef.current) setIframeBlocked(true);
-          }, 6000);
-        } else {
-          document.body.style.overflow = "auto";
-          clearTimeout(iframeWatchdogRef.current);
-        }
-        return () => {
-          document.body.style.overflow = "auto";
-          clearTimeout(iframeWatchdogRef.current);
-        };
-      }, [selectedId]);
-
-      // Mobile: tapping anywhere outside the cards deselects the lifted card.
-      // Tapping a different card still swaps lifts (because the check is "any
-      // card", not "the lifted card"). Listener only attaches when there's
-      // actually something to deselect.
-      useEffect(() => {
-        if (!isTouchDevice || selectedId || !hoveredId) return;
-        const onDocClick = (e) => {
-          if (!e.target.closest('[data-card-id]')) {
-            setHoveredId(null);
-          }
-        };
-        document.addEventListener('click', onDocClick);
-        return () => document.removeEventListener('click', onDocClick);
-      }, [isTouchDevice, selectedId, hoveredId]);
-
-      const handleDeckMouseEnter = useCallback(() => {
-        if (isTouchDevice) return;
-        if (Date.now() < suppressFanUntilRef.current) return;
-        setIsDeckFanned(true);
-      }, [isTouchDevice]);
-
-      const handleDeckMouseLeave = useCallback(() => {
-        if (isTouchDevice) return;
-        setIsDeckFanned(false);
-        setHoveredId(null);
-      }, [isTouchDevice]);
-
-      const handleCardMouseEnter = useCallback((id) => {
-        if (isTouchDevice) return;
-        setHoveredId(id);
-      }, [isTouchDevice]);
-
-      const closeModal = useCallback(() => {
-        setSelectedId(null);
-        if (!isTouchDevice) {
-          setHoveredId(null);
-          setIsDeckFanned(false);
-        }
-        suppressFanUntilRef.current = Date.now() + 700;
-      }, [isTouchDevice]);
-
-      const isNarrow = viewport.w < 640;
-      const cardWidth = isNarrow ? 190 : 280;
-      const cardHeight = isNarrow ? 275 : 400;
-      const fanOffsetX = isNarrow ? 60 : 70;
-      const fanRotateMul = isNarrow ? 9 : 6;
-      const fanYDropMul = isNarrow ? 14 : 6;
-      const stageHeight = isNarrow ? 400 : 520;
-
-      const deckFannedEffective = isTouchDevice || isDeckFanned;
-
-      return (
-        <div className="min-h-screen w-full bg-[#050505] flex flex-col items-center justify-center relative overflow-hidden font-sans">
-
-          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-zinc-800/20 blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-zinc-800/10 blur-[100px]" />
-          </div>
-
-          <div className="absolute top-6 left-6 md:top-8 md:left-8 z-30 pointer-events-none flex items-center gap-3">
-            <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center shadow-xl">
-              <Layers size={20} className="text-zinc-400" />
-            </div>
-            <div>
-              <h1 className="text-lg md:text-xl font-bold tracking-tight text-white leading-none">Jared in Tech</h1>
-              <p className="text-[10px] md:text-xs text-zinc-500 font-mono-pro tracking-widest uppercase mt-1">Portfolio '26</p>
-            </div>
-          </div>
-
-          {isTouchDevice && !selectedId && !hoveredId && (
-            <p className="absolute bottom-6 left-0 right-0 z-20 text-center text-[10px] font-mono-pro uppercase tracking-[0.3em] text-zinc-500 px-6 pointer-events-none">
-              Tap a card to lift
-            </p>
-          )}
-
-          <div
-            className="relative z-20 w-full max-w-[1200px] mx-auto flex items-center justify-center"
-            style={{ height: stageHeight, perspective: 1200 }}
-            onMouseEnter={handleDeckMouseEnter}
-            onMouseLeave={handleDeckMouseLeave}
-          >
-            {projects.map((project, index) => (
-              <Card
-                key={project.id}
-                project={project}
-                index={index}
-                centerIndex={(projects.length - 1) / 2}
-                totalCards={projects.length}
-                isSelected={selectedId === project.id}
-                isHovered={hoveredId === project.id}
-                isDeckFanned={deckFannedEffective}
-                isTouchDevice={isTouchDevice}
-                cardWidth={cardWidth}
-                cardHeight={cardHeight}
-                fanOffsetX={fanOffsetX}
-                fanRotateMul={fanRotateMul}
-                fanYDropMul={fanYDropMul}
-                onMouseEnter={() => handleCardMouseEnter(project.id)}
-                onClick={() => {
-                  if (isTouchDevice) {
-                    if (hoveredId === project.id) setSelectedId(project.id);
-                    else setHoveredId(project.id);
-                  } else {
-                    setSelectedId(project.id);
-                  }
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Expanded modal */}
-          <AnimatePresence>
-            {selectedId && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="fixed inset-0 bg-black/95 z-40"
-                  onClick={closeModal}
-                />
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-8 pointer-events-none">
-                  {projects.filter(p => p.id === selectedId).map(project => (
-                    <motion.div
-                      key={`expanded-${project.id}`}
-                      initial={{ opacity: 0, scale: 0.88 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.92 }}
-                      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                      className="w-full max-w-6xl h-[88vh] md:h-[85vh] bg-[#0a0a0a] rounded-3xl overflow-hidden shadow-2xl relative pointer-events-auto border border-zinc-800"
-                    >
-                      <div className="absolute inset-0 w-full h-full bg-black z-0">
-                        {!iframeBlocked && (
-                          <iframe
-                            src={`https://${project.live}`}
-                            title={project.title}
-                            className="w-full h-full border-0"
-                            onLoad={() => {
-                              iframeLoadedRef.current = true;
-                              setIframeLoaded(true);
-                            }}
-                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-                          />
-                        )}
-
-                        {iframeBlocked && (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-center px-8 gap-4">
-                            <p className="text-zinc-300 max-w-md">
-                              This site blocks embedded previews. Open the live demo in a new tab instead.
-                            </p>
-                            <a
-                              href={`https://${project.live}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-2 bg-white text-black py-3 px-5 rounded-xl text-sm font-bold hover:bg-zinc-200 transition-colors"
-                            >
-                              <ArrowUpRight size={16} /> Open {project.title}
-                            </a>
-                          </div>
-                        )}
-                      </div>
-
-                      <div
-                        className={`absolute inset-0 z-10 pointer-events-none bg-gradient-to-t from-black/90 via-black/10 to-black/50 transition-opacity duration-500 ${isPlayingDemo ? 'opacity-0' : 'opacity-100'}`}
-                      />
-
-                      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-30 pointer-events-auto">
-                        <button
-                          onClick={closeModal}
-                          className="p-3 bg-black/50 hover:bg-black/70 backdrop-blur-md rounded-full transition-colors text-zinc-300 hover:text-white border border-white/10 shadow-xl"
-                          aria-label="Close"
-                        >
-                          <X size={22} />
-                        </button>
-                      </div>
-
-                      <AnimatePresence>
-                        {!isPlayingDemo && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            transition={{ duration: 0.35, delay: 0.05 }}
-                            className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[520px] z-20 pointer-events-auto"
-                          >
-                            <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col max-h-[78vh] overflow-y-auto">
-                              <div className="mb-5">
-                                <div
-                                  className="font-mono-pro text-[10px] tracking-[0.3em] uppercase mb-2"
-                                  style={{ color: project.color }}
-                                >
-                                  {project.role}
-                                </div>
-                                <h2
-                                  className="font-display text-white leading-[0.9]"
-                                  style={{ fontSize: 'clamp(2.25rem, 5vw, 3.5rem)' }}
-                                >
-                                  {project.title}
-                                </h2>
-                              </div>
-                              <p className="text-zinc-200 text-sm md:text-base leading-relaxed mb-6">
-                                {project.desc}
-                              </p>
-                              <div className="mb-6">
-                                <h4 className="text-[10px] text-zinc-400 uppercase tracking-[0.3em] mb-3 font-mono-pro">Technologies</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {project.tech.map(tech => (
-                                    <span
-                                      key={tech}
-                                      className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-full text-xs font-medium text-zinc-200"
-                                    >
-                                      {tech}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="mt-auto pt-5 border-t border-white/10 flex gap-3">
-                                <a
-                                  href={`https://${project.repo}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex-1 bg-white/10 hover:bg-white/15 text-white py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors border border-white/10"
-                                >
-                                  <Github size={16} /> Source
-                                </a>
-                                <button
-                                  onClick={() => setIsPlayingDemo(true)}
-                                  className="flex-1 bg-white text-black py-3 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors shadow-lg"
-                                >
-                                  <ExternalLink size={16} /> Live Demo
-                                </button>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {!iframeLoaded && !iframeBlocked && (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                          <div className="text-xs font-mono-pro uppercase tracking-[0.3em] text-zinc-500 animate-pulse">
-                            Loading demo…
-                          </div>
-                        </div>
-                      )}
-
-                      <AnimatePresence>
-                        {isPlayingDemo && (
-                          <>
-                            <motion.div
-                              initial={{ opacity: 0, y: 30 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 30 }}
-                              transition={{ duration: 0.3, delay: 0.15 }}
-                              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto"
-                            >
-                              <button
-                                onClick={() => setIsPlayingDemo(false)}
-                                className="bg-black/70 backdrop-blur-md border border-white/20 text-white py-2.5 px-5 rounded-full text-xs md:text-sm font-bold shadow-2xl hover:bg-black/90 transition-colors flex items-center gap-2"
-                              >
-                                <Layers size={14} /> Project Details
-                              </button>
-                            </motion.div>
-
-                            {!iframeBlocked && (
-                              <motion.a
-                                href={`https://${project.live}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 30 }}
-                                transition={{ duration: 0.3, delay: 0.2 }}
-                                className="absolute bottom-6 right-4 md:right-6 z-30 pointer-events-auto bg-black/70 backdrop-blur-md border border-white/20 text-white py-2.5 px-5 rounded-full text-xs md:text-sm font-bold shadow-2xl hover:bg-black/90 transition-colors flex items-center gap-2"
-                                aria-label="Open in new tab"
-                              >
-                                Open Site <ArrowUpRight size={14} />
-                              </motion.a>
-                            )}
-                          </>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  ))}
-                </div>
-              </>
-            )}
-          </AnimatePresence>
+        <div className="playing-card card-back" aria-hidden="true">
+          <div className="card-back-pattern" />
         </div>
       );
     }
 
-    const root = createRoot(document.getElementById('root'));
-    root.render(<PortfolioDeck />);
+    function CardFront({ project }) {
+      return (
+        <div className="playing-card card-front" aria-hidden="true">
+          <div className="corner corner-top" style={{ color: project.accent }}>
+            <span className="corner-rank">{project.rank}</span>
+            <span className="corner-suit">{project.suit}</span>
+          </div>
+          <div className="card-center">
+            <div className="card-medallion" style={{ color: project.accent }}>
+              {project.suit}
+            </div>
+            <h3 className="card-title">{project.title}</h3>
+            <p className="card-caption">{project.kicker}</p>
+          </div>
+          <div className="corner corner-bottom" style={{ color: project.accent }}>
+            <span className="corner-rank">{project.rank}</span>
+            <span className="corner-suit">{project.suit}</span>
+          </div>
+        </div>
+      );
+    }
+
+    function DealPile({ onDeal, reducedMotion }) {
+      return (
+        <motion.button
+          className="deck-pile"
+          type="button"
+          aria-label="Deal the project deck"
+          onClick={onDeal}
+          initial={reducedMotion ? false : { opacity: 0, y: -70, rotateZ: -5 }}
+          animate={{ opacity: 1, y: 0, rotateZ: -2 }}
+          whileHover={reducedMotion ? undefined : { y: -12, rotateZ: 0 }}
+          whileTap={reducedMotion ? undefined : { scale: 0.97 }}
+          transition={reducedMotion ? instant : spring}
+        >
+          {[3, 2, 1, 0].map((layer) => (
+            <motion.div
+              className="deck-layer"
+              key={layer}
+              style={{
+                x: layer * -3,
+                y: layer * 3,
+                rotateZ: layer * -0.7,
+                zIndex: 4 - layer
+              }}
+            >
+              <CardBack />
+            </motion.div>
+          ))}
+          <span className="deck-cta pill-button">
+            <Layers3 size={15} />
+            Deal the deck
+          </span>
+        </motion.button>
+      );
+    }
+
+    function FanCard({
+      project,
+      index,
+      count,
+      current,
+      compact,
+      onPick,
+      onNavigate,
+      onMakeCurrent,
+      reducedMotion
+    }) {
+      const offset = index - ((count - 1) / 2);
+      const spacing = compact ? 58 : 126;
+      const rotation = compact ? 8.5 : 10;
+      const x = offset * spacing;
+      const y = Math.abs(offset) * (compact ? 14 : 25) + (current ? -22 : 0);
+      const rotateZ = offset * rotation;
+
+      const handleDragEnd = (_, info) => {
+        if (info.offset.x < -58 || info.velocity.x < -520) onNavigate(1);
+        if (info.offset.x > 58 || info.velocity.x > 520) onNavigate(-1);
+      };
+
+      return (
+        <motion.button
+          layoutId={`card-${project.id}`}
+          className={`fan-card ${current ? "active-card" : ""}`}
+          type="button"
+          aria-label={`Pick up ${project.title}`}
+          aria-current={current ? "true" : undefined}
+          initial={reducedMotion ? false : { x: 0, y: 90, rotateZ: 0, opacity: 0, scale: 0.82 }}
+          animate={{
+            x,
+            y,
+            rotateZ,
+            opacity: 1,
+            scale: current ? 1.04 : 1,
+            zIndex: current ? 20 : count - Math.abs(offset)
+          }}
+          whileHover={reducedMotion ? undefined : { y: y - 18, scale: current ? 1.075 : 1.045 }}
+          whileTap={reducedMotion ? undefined : { scale: 0.99 }}
+          whileDrag={reducedMotion ? undefined : { scale: 1.08, y: y - 18, cursor: "grabbing" }}
+          drag={!reducedMotion && current ? "x" : false}
+          dragConstraints={{ left: -150, right: 150 }}
+          dragElastic={0.16}
+          dragSnapToOrigin
+          onDragEnd={handleDragEnd}
+          onFocus={onMakeCurrent}
+          onClick={() => onPick(project)}
+          transition={reducedMotion ? instant : spring}
+        >
+          <CardFront project={project} />
+        </motion.button>
+      );
+    }
+
+    function ProjectReveal({ project }) {
+      return (
+        <div className="playing-card detail-card">
+          <div className="detail-content">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="detail-kicker" style={{ color: project.accent }}>
+                  {project.rank}{project.suit} / {project.kicker}
+                </p>
+                <h2 className="detail-title" id="project-title">{project.title}</h2>
+              </div>
+              <span className="font-card text-[58px] leading-none" style={{ color: project.accent }}>
+                {project.suit}
+              </span>
+            </div>
+
+            <div className="detail-divider" />
+            <p className="detail-desc">{project.description}</p>
+            <div className="detail-divider" />
+
+            <div>
+              <p className="detail-label">Built with</p>
+              <div className="tech-list">
+                {project.tech.map((item) => (
+                  <span className="tech-chip" key={item}>{item}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="detail-actions">
+              <a
+                className="project-action"
+                href={project.repo}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Github size={14} />
+                Source
+              </a>
+              <a
+                className="project-action project-action-primary"
+                href={project.live}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Live site
+                <ArrowUpRight size={14} />
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function PickedCard({ project, onClose, onNavigate, reducedMotion }) {
+      const closeRef = useRef(null);
+
+      useEffect(() => {
+        closeRef.current?.focus();
+      }, []);
+
+      return (
+        <>
+          <motion.button
+            className="modal-backdrop"
+            type="button"
+            aria-label="Close project card"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={reducedMotion ? instant : { duration: 0.2 }}
+          />
+
+          <motion.button
+            ref={closeRef}
+            className="close-button"
+            type="button"
+            aria-label="Put card back on the table"
+            onClick={onClose}
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={reducedMotion ? instant : { duration: 0.18 }}
+          >
+            <X size={20} />
+          </motion.button>
+
+          <div
+            className="picked-wrap"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="project-title"
+          >
+            <motion.div
+              layoutId={`card-${project.id}`}
+              className="picked-card"
+              transition={reducedMotion ? instant : spring}
+            >
+              <motion.div
+                className="card-shell"
+                initial={reducedMotion ? false : { rotateY: 0 }}
+                animate={{ rotateY: 180 }}
+                exit={{ rotateY: 0 }}
+                transition={reducedMotion ? instant : { type: "spring", stiffness: 210, damping: 24, delay: 0.13 }}
+              >
+                <CardFront project={project} />
+                <ProjectReveal project={project} />
+              </motion.div>
+            </motion.div>
+          </div>
+
+          <motion.div
+            className="modal-nav"
+            initial={reducedMotion ? false : { opacity: 0, x: "-50%", y: 12 }}
+            animate={{ opacity: 1, x: "-50%", y: 0 }}
+            exit={{ opacity: 0, x: "-50%", y: 12 }}
+            transition={reducedMotion ? instant : { duration: 0.2, delay: 0.22 }}
+          >
+            <button className="pill-button" type="button" onClick={() => onNavigate(-1)} aria-label="Previous project">
+              <ChevronLeft size={16} />
+            </button>
+            <span className="control-count">Next card</span>
+            <button className="pill-button" type="button" onClick={() => onNavigate(1)} aria-label="Next project">
+              <ChevronRight size={16} />
+            </button>
+          </motion.div>
+        </>
+      );
+    }
+
+    function PortfolioTable() {
+      const reducedMotion = useReducedMotion();
+      const [dealt, setDealt] = useState(false);
+      const [order, setOrder] = useState(projects);
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [selected, setSelected] = useState(null);
+      const [compact, setCompact] = useState(() => window.innerWidth < 760);
+      const [announcement, setAnnouncement] = useState("Project deck ready");
+
+      const currentProject = order[currentIndex];
+
+      useEffect(() => {
+        const onResize = () => setCompact(window.innerWidth < 760);
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+      }, []);
+
+      const navigate = useCallback((stepOrIndex) => {
+        setCurrentIndex((previous) => {
+          const next = Math.abs(stepOrIndex) > 1
+            ? wrapIndex(stepOrIndex, order.length)
+            : wrapIndex(previous + stepOrIndex, order.length);
+          setAnnouncement(`${order[next].title} selected`);
+          return next;
+        });
+      }, [order]);
+
+      const navigateModal = useCallback((step) => {
+        setSelected((previous) => {
+          const index = order.findIndex((item) => item.id === previous.id);
+          const nextProject = order[wrapIndex(index + step, order.length)];
+          setCurrentIndex(order.findIndex((item) => item.id === nextProject.id));
+          setAnnouncement(`${nextProject.title} revealed`);
+          return nextProject;
+        });
+      }, [order]);
+
+      const dealDeck = useCallback(() => {
+        setDealt(true);
+        setAnnouncement("Deck dealt. Use arrow keys or swipe the highlighted card.");
+      }, []);
+
+      const shuffleDeck = useCallback(() => {
+        const next = shuffled(order);
+        setOrder(next);
+        setCurrentIndex(0);
+        setSelected(null);
+        setDealt(true);
+        setAnnouncement(`Deck shuffled. ${next[0].title} selected`);
+      }, [order]);
+
+      const pickUp = useCallback((project) => {
+        setSelected(project);
+        setCurrentIndex(order.findIndex((item) => item.id === project.id));
+        setAnnouncement(`${project.title} revealed`);
+      }, [order]);
+
+      useEffect(() => {
+        const onKeyDown = (event) => {
+          if (event.key === "Escape" && selected) {
+            setSelected(null);
+            return;
+          }
+
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            selected ? navigateModal(-1) : dealt && navigate(-1);
+          }
+
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            selected ? navigateModal(1) : dealt && navigate(1);
+          }
+
+          if (event.key.toLowerCase() === "s" && !selected) {
+            event.preventDefault();
+            shuffleDeck();
+          }
+
+          if (event.key === "Enter" && dealt && !selected && document.activeElement === document.body) {
+            pickUp(currentProject);
+          }
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+      }, [currentProject, dealt, navigate, navigateModal, pickUp, selected, shuffleDeck]);
+
+      const visibleCards = useMemo(
+        () => order.filter((project) => project.id !== selected?.id),
+        [order, selected]
+      );
+
+      return (
+        <main className="table-surface">
+          <div aria-live="polite" className="sr-only">{announcement}</div>
+
+          <header className="absolute left-7 top-7 z-30 flex items-center gap-3 md:left-10 md:top-10">
+            <div className="brand-mark grid h-12 w-12 place-items-center rounded-2xl text-[#d3b36a]">
+              <Layers3 size={22} />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold leading-none tracking-tight text-[#f5edda] md:text-xl">Jared in Tech</h1>
+              <p className="font-mono mt-1.5 text-[9px] uppercase tracking-[0.24em] text-[#d8cdaecc]">
+                Portfolio / 2026 edition
+              </p>
+            </div>
+          </header>
+
+          <aside className="table-note desktop-note bottom-[11%] right-[7%] z-10" aria-label="How to use this portfolio">
+            <p className="font-card mb-2 text-[27px] font-bold leading-none">Pick a card.</p>
+            <p className="font-mono text-[9px] uppercase leading-[1.75] tracking-[0.13em]">
+              Deal the deck, shuffle through my work, then lift a card to reveal the project.
+            </p>
+          </aside>
+
+          <section className="flex min-h-[100svh] flex-col items-center justify-center px-4 pb-20 pt-28 md:px-8 md:pb-14 md:pt-24">
+            <div className="relative z-10 mb-0 text-center md:mb-[-18px]">
+              <p className="font-mono mb-3 text-[9px] uppercase tracking-[0.32em] text-[#d3b36a]">Selected works</p>
+              <h2 className="font-card text-[52px] font-bold leading-[0.82] tracking-[-0.06em] text-[#f5edda] md:text-[76px]">
+                Pick a card.
+                <span className="block text-[#d7c798]">Any card.</span>
+              </h2>
+            </div>
+
+            <div className="stage" aria-label="Project card table">
+              <AnimatePresence>
+                {!dealt && <DealPile key="deal-pile" onDeal={dealDeck} reducedMotion={reducedMotion} />}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {dealt && visibleCards.map((project) => {
+                  const index = order.findIndex((item) => item.id === project.id);
+                  return (
+                    <FanCard
+                      key={project.id}
+                      project={project}
+                      index={index}
+                      count={order.length}
+                      current={currentProject.id === project.id}
+                      compact={compact}
+                      onPick={pickUp}
+                      onNavigate={navigate}
+                      onMakeCurrent={() => setCurrentIndex(index)}
+                      reducedMotion={reducedMotion}
+                    />
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+
+            <div className="relative z-20 mt-[-36px]">
+              {dealt ? (
+                <>
+                  <div className="table-controls">
+                    <button className="pill-button" type="button" onClick={() => navigate(-1)} aria-label="Previous card">
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button className="pill-button" type="button" onClick={shuffleDeck}>
+                      <Shuffle size={15} />
+                      Shuffle
+                    </button>
+                    <button className="pill-button" type="button" onClick={() => navigate(1)} aria-label="Next card">
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                  <p className="font-mono mobile-hint mt-4 text-center text-[8px] uppercase tracking-[0.2em] text-[#d8cdae99]">
+                    Swipe the raised card or tap to reveal
+                  </p>
+                  <p className="font-mono desktop-note mt-4 text-center text-[8px] uppercase tracking-[0.2em] text-[#d8cdae99]">
+                    Swipe, use arrow keys, or press S to shuffle
+                  </p>
+                </>
+              ) : (
+                <p className="font-mono text-center text-[8px] uppercase tracking-[0.2em] text-[#d8cdae99]">
+                  Four projects are waiting on the table
+                </p>
+              )}
+            </div>
+          </section>
+
+          <footer className="absolute bottom-7 left-7 z-20 md:bottom-10 md:left-10">
+            <a
+              className="font-mono inline-flex items-center gap-2 text-[9px] uppercase tracking-[0.2em] text-[#d8cdaecc] transition-colors duration-200 hover:text-[#f5edda] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f2d88f]"
+              href="https://github.com/jaredando"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Github size={14} />
+              github.com/jaredando
+            </a>
+          </footer>
+
+          <div className="desktop-note absolute bottom-10 right-10 z-20">
+            <p className="font-mono flex items-center gap-2 text-[9px] uppercase tracking-[0.2em] text-[#d8cdaeaa]">
+              <MoveHorizontal size={14} />
+              Drag to browse
+            </p>
+          </div>
+
+          <AnimatePresence>
+            {selected && (
+              <PickedCard
+                key={selected.id}
+                project={selected}
+                onClose={() => setSelected(null)}
+                onNavigate={navigateModal}
+                reducedMotion={reducedMotion}
+              />
+            )}
+          </AnimatePresence>
+        </main>
+      );
+    }
+
+    createRoot(document.getElementById("root")).render(<PortfolioTable />);
   </script>
 </body>
 </html>
