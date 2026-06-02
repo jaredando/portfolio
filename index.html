@@ -296,6 +296,79 @@
       font-weight: 700;
     }
 
+    .card-preview-glass {
+      position: relative;
+      width: 150px;
+      height: 108px;
+      margin-bottom: 17px;
+      overflow: hidden;
+      border: 1px solid rgba(24, 57, 49, 0.26);
+      border-radius: 48% / 38%;
+      background:
+        radial-gradient(circle at 50% 44%, rgba(255,255,255,0.86), rgba(212, 224, 210, 0.62) 55%, rgba(82, 111, 102, 0.48)),
+        #d9e2d6;
+      box-shadow:
+        0 9px 18px rgba(44, 61, 52, 0.14),
+        inset 0 0 0 4px rgba(255,255,255,0.38),
+        inset 0 -12px 22px rgba(22, 67, 58, 0.22);
+      isolation: isolate;
+    }
+
+    .card-preview-glass iframe {
+      position: absolute;
+      inset: 0;
+      width: 500%;
+      height: 500%;
+      border: 0;
+      opacity: 0.46;
+      filter: saturate(0.62) contrast(0.88) sepia(0.18);
+      pointer-events: none;
+      transform: scale(0.2);
+      transform-origin: top left;
+      transition: opacity 280ms ease, filter 280ms ease;
+    }
+
+    .card-preview-glass::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 48%, transparent 38%, rgba(10, 48, 42, 0.24) 100%),
+        linear-gradient(145deg, rgba(255,255,255,0.58), transparent 31%, transparent 66%, rgba(255,255,255,0.18));
+      mix-blend-mode: screen;
+    }
+
+    .card-preview-suit {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 48px;
+      font-weight: 700;
+      opacity: 0.62;
+      text-shadow: 0 2px 12px rgba(255,255,255,0.82);
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    .glass-sheen {
+      position: absolute;
+      top: -28%;
+      bottom: -28%;
+      left: -58%;
+      z-index: 4;
+      width: 42%;
+      opacity: 0;
+      pointer-events: none;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.64), transparent);
+      filter: blur(4px);
+      transform: skewX(-16deg);
+    }
+
     .card-title {
       max-width: 190px;
       font-family: "Cormorant Garamond", Georgia, serif;
@@ -321,6 +394,21 @@
         0 4px 2px rgba(0,0,0,0.2),
         0 0 0 2px rgba(211, 179, 106, 0.45),
         inset 0 0 0 5px rgba(103, 76, 44, 0.08);
+    }
+
+    .active-card .card-preview-glass iframe {
+      opacity: 0.68;
+      filter: saturate(0.82) contrast(0.94) sepia(0.08);
+    }
+
+    .active-card .glass-sheen {
+      animation: glass-pass 780ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes glass-pass {
+      0% { left: -58%; opacity: 0; }
+      22% { opacity: 0.78; }
+      100% { left: 128%; opacity: 0; }
     }
 
     .deck-pile {
@@ -597,6 +685,8 @@
       .corner-suit { font-size: 16px; }
       .card-center { inset: 42px 18px; }
       .card-medallion { width: 60px; height: 60px; margin-bottom: 12px; font-size: 34px; }
+      .card-preview-glass { width: 116px; height: 82px; margin-bottom: 11px; }
+      .card-preview-suit { font-size: 38px; }
       .card-title { max-width: 150px; font-size: 25px; }
       .card-caption { margin-top: 9px; font-size: 7px; }
       .deck-cta { bottom: -74px; }
@@ -706,7 +796,24 @@
       );
     }
 
-    function CardFront({ project }) {
+    function ProjectGlass({ project }) {
+      return (
+        <div className="card-preview-glass">
+          <iframe
+            src={project.live}
+            title={`${project.title} reflected live preview`}
+            tabIndex={-1}
+            aria-hidden="true"
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin"
+          />
+          <span className="card-preview-suit" style={{ color: project.accent }}>{project.suit}</span>
+          <span className="glass-sheen" />
+        </div>
+      );
+    }
+
+    function CardFront({ project, showPreview = true }) {
       return (
         <div className="playing-card card-front" aria-hidden="true">
           <div className="corner corner-top" style={{ color: project.accent }}>
@@ -714,9 +821,13 @@
             <span className="corner-suit">{project.suit}</span>
           </div>
           <div className="card-center">
-            <div className="card-medallion" style={{ color: project.accent }}>
-              {project.suit}
-            </div>
+            {showPreview ? (
+              <ProjectGlass project={project} />
+            ) : (
+              <div className="card-medallion" style={{ color: project.accent }}>
+                {project.suit}
+              </div>
+            )}
             <h3 className="card-title">{project.title}</h3>
             <p className="card-caption">{project.kicker}</p>
           </div>
@@ -737,8 +848,9 @@
           onClick={onDeal}
           initial={reducedMotion ? false : { opacity: 0, y: -70, rotateZ: -5 }}
           animate={{ opacity: 1, y: 0, rotateZ: -2 }}
+          exit={{ opacity: 0, y: 22, scale: 0.9, rotateZ: 0 }}
           whileHover={reducedMotion ? undefined : { y: -12, rotateZ: 0 }}
-          whileTap={reducedMotion ? undefined : { scale: 0.97 }}
+          whileTap={reducedMotion ? undefined : { scale: 0.94, y: 5 }}
           transition={reducedMotion ? instant : spring}
         >
           {[3, 2, 1, 0].map((layer) => (
@@ -788,7 +900,6 @@
 
       return (
         <motion.button
-          layoutId={`card-${project.id}`}
           className={`fan-card ${current ? "active-card" : ""}`}
           type="button"
           aria-label={`Pick up ${project.title}`}
@@ -883,7 +994,7 @@
       );
     }
 
-    function PickedCard({ project, onClose, reducedMotion }) {
+    function PickedCard({ project, onClose, reducedMotion, returning }) {
       const closeRef = useRef(null);
 
       useEffect(() => {
@@ -898,9 +1009,9 @@
             aria-label="Close project card"
             onClick={onClose}
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: returning ? 0.08 : 1 }}
             exit={{ opacity: 0 }}
-            transition={reducedMotion ? instant : { duration: 0.2 }}
+            transition={reducedMotion ? instant : { duration: returning ? 0.52 : 0.2 }}
           />
 
           <motion.button
@@ -909,8 +1020,9 @@
             type="button"
             aria-label="Put card back on the table"
             onClick={onClose}
+            disabled={returning}
             initial={reducedMotion ? false : { opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: returning ? 0 : 1, scale: returning ? 0.72 : 1, rotateZ: returning ? 18 : 0 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={reducedMotion ? instant : { duration: 0.18 }}
           >
@@ -924,18 +1036,32 @@
             aria-labelledby="project-title"
           >
             <motion.div
-              layoutId={`card-${project.id}`}
               className="picked-card"
-              transition={reducedMotion ? instant : spring}
+              initial={reducedMotion ? false : { opacity: 0, scale: 0.74, y: 58, rotateZ: -3 }}
+              animate={returning
+                ? { opacity: 1, scale: 0.64, y: 74, rotateZ: -2 }
+                : { opacity: 1, scale: 1, y: 0, rotateZ: 0 }}
+              exit={{
+                opacity: 0,
+                scale: 0.62,
+                y: 76,
+                rotateZ: -2,
+                transition: reducedMotion ? instant : { duration: 0.16, ease: "easeOut" }
+              }}
+              transition={reducedMotion ? instant : returning
+                ? { type: "spring", stiffness: 230, damping: 25, mass: 0.9 }
+                : { type: "spring", stiffness: 265, damping: 24, mass: 0.86 }}
             >
               <motion.div
                 className="card-shell"
                 initial={reducedMotion ? false : { rotateY: 0 }}
-                animate={{ rotateY: 180 }}
+                animate={{ rotateY: returning ? 0 : 180 }}
                 exit={{ rotateY: 0 }}
-                transition={reducedMotion ? instant : { type: "spring", stiffness: 210, damping: 24, delay: 0.13 }}
+                transition={reducedMotion ? instant : returning
+                  ? { type: "spring", stiffness: 240, damping: 26 }
+                  : { type: "spring", stiffness: 210, damping: 24, delay: 0.13 }}
               >
-                <CardFront project={project} />
+                <CardBack />
                 <ProjectReveal project={project} />
               </motion.div>
             </motion.div>
@@ -950,9 +1076,11 @@
       const [hasOpened, setHasOpened] = useState(false);
       const [highlightedId, setHighlightedId] = useState(null);
       const [selected, setSelected] = useState(null);
+      const [returning, setReturning] = useState(false);
       const [compact, setCompact] = useState(() => window.innerWidth < 760);
       const [touchMode, setTouchMode] = useState(() => window.matchMedia("(hover: none), (pointer: coarse)").matches);
       const [announcement, setAnnouncement] = useState("Project deck ready");
+      const returnTimerRef = useRef(null);
 
       useEffect(() => {
         const pointerQuery = window.matchMedia("(hover: none), (pointer: coarse)");
@@ -965,6 +1093,8 @@
           pointerQuery.removeEventListener?.("change", onPointerChange);
         };
       }, []);
+
+      useEffect(() => () => clearTimeout(returnTimerRef.current), []);
 
       const dealDeck = useCallback(() => {
         setHasOpened(true);
@@ -981,15 +1111,23 @@
         }
 
         setDealt(false);
+        setReturning(false);
         setSelected(project);
         setAnnouncement(`${project.title} revealed`);
       }, [compact, highlightedId, touchMode]);
 
       const putBack = useCallback(() => {
-        setSelected(null);
-        setHighlightedId(null);
-        setAnnouncement("Project returned to the deck. Open it again to choose another card.");
-      }, []);
+        if (returning) return;
+        setReturning(true);
+        setAnnouncement("Project returning to the deck.");
+        clearTimeout(returnTimerRef.current);
+        returnTimerRef.current = setTimeout(() => {
+          setSelected(null);
+          setHighlightedId(null);
+          setReturning(false);
+          setAnnouncement("Project returned to the deck. Open it again to choose another card.");
+        }, reducedMotion ? 20 : 720);
+      }, [reducedMotion, returning]);
 
       useEffect(() => {
         const onKeyDown = (event) => {
@@ -1097,6 +1235,7 @@
                 project={selected}
                 onClose={putBack}
                 reducedMotion={reducedMotion}
+                returning={returning}
               />
             )}
           </AnimatePresence>
