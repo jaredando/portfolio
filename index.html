@@ -329,6 +329,17 @@
       transform-origin: top left;
     }
 
+    .detail-glass img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 18%;
+      opacity: 0.88;
+      filter: saturate(0.78) contrast(0.92) brightness(0.98) sepia(0.08);
+    }
+
     .detail-glass::before {
       content: "";
       position: absolute;
@@ -609,6 +620,10 @@
       padding-top: 14px;
     }
 
+    .detail-actions-single {
+      grid-template-columns: 1fr;
+    }
+
     .project-action {
       display: inline-flex;
       min-height: 42px;
@@ -800,6 +815,18 @@
         tech: ["HTML5", "JavaScript", "CSS"],
         repo: "https://github.com/jaredando/SquadLogic",
         live: "https://jaredando.github.io/SquadLogic"
+      },
+      {
+        id: "finetune",
+        title: "Finetune",
+        rank: "10",
+        suit: "\u2660",
+        accent: "#2e6ff2",
+        kicker: "Intune admin companion",
+        description: "A local-first browser side panel for Microsoft Intune admins to search policies, trace assignments and read settings in plain language without getting lost in the portal.",
+        tech: ["React", "TypeScript", "Browser Extension", "Microsoft Graph"],
+        live: "https://finetune.tools",
+        previewImage: "./assets/finetune-preview.png"
       }
     ];
 
@@ -822,17 +849,25 @@
           animate={{ opacity: 1, scale: 1, rotateX: 0 }}
           transition={{ type: "spring", stiffness: 240, damping: 24, mass: 0.82, delay: 0.34 }}
         >
-          <iframe
-            src={project.live}
-            title={`${project.title} reflected live preview`}
-            tabIndex={-1}
-            aria-hidden="true"
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin"
-          />
+          {project.previewImage ? (
+            <img
+              src={project.previewImage}
+              alt=""
+              aria-hidden="true"
+            />
+          ) : (
+            <iframe
+              src={project.live}
+              title={`${project.title} reflected live preview`}
+              tabIndex={-1}
+              aria-hidden="true"
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin"
+            />
+          )}
           <span className="detail-glass-label">
             <span className="detail-glass-dot" />
-            Live reflection
+            {project.previewImage ? "Site preview" : "Live reflection"}
           </span>
           <span className="glass-sheen" />
         </motion.div>
@@ -991,16 +1026,18 @@
               </div>
             </div>
 
-            <div className="detail-actions">
-              <a
-                className="project-action"
-                href={project.repo}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Github size={14} />
-                Source
-              </a>
+            <div className={`detail-actions ${project.repo ? "" : "detail-actions-single"}`}>
+              {project.repo && (
+                <a
+                  className="project-action"
+                  href={project.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Github size={14} />
+                  Source
+                </a>
+              )}
               <a
                 className="project-action project-action-primary"
                 href={project.live}
@@ -1232,7 +1269,7 @@
                 </>
               ) : (
                 <p className="font-mono text-center text-[8px] uppercase tracking-[0.2em] text-[#d8cdae99]">
-                  Four projects are waiting on the table
+                  {projects.length} projects are waiting on the table
                 </p>
               )}
             </div>
