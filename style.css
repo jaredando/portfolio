@@ -29,3 +29,38 @@ nav a { display: inline-flex; align-items: center; min-height: 44px; }
   .story p, .clubshed p, .background > div > p,
   .project-list p, .project-copy > p:not(.context):not(.project-lead) { font-size: 16px; }
 }
+
+.mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+  padding: 10px 18px 10px 10px;
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+  box-shadow: 0 5px 18px #173e3440;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mode span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  border-radius: 50%;
+  background: var(--cream);
+  color: var(--green);
+  font-size: 18px;
+}
+
+.mode:hover {
+  background: #275b48;
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mode { animation-delay: -15s; }
+}
