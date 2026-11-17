@@ -752,9 +752,16 @@
     }
     .portfolio-return {
       position: absolute; right: 20px; top: 25px; z-index: 35;
-      display: inline-flex; align-items: center; min-height: 44px;
-      background: #f5edda; color: #17332d; padding: 8px 15px;
-      border-radius: 24px; font-size: 13px; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 10px; min-height: 48px;
+      background: #f5edda; color: #17332d; padding: 7px 16px 7px 7px;
+      border: 1px solid #f5edda; border-radius: 30px;
+      box-shadow: 0 5px 18px #0004;
+      font-size: 15px; font-weight: 700; text-decoration: none;
+    }
+    .portfolio-return span {
+      display: grid; place-items: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #17332d; color: #f5edda; font-size: 18px;
     }
     .project-picker {
       position: relative; z-index: 20; display: flex; flex-wrap: wrap;
@@ -770,8 +777,9 @@
       outline: 2px solid #f2d88f; outline-offset: 3px;
     }
     @media (max-width: 420px) {
-      .portfolio-return { top: 30px; right: 12px; padding-inline: 10px; }
-      .table-surface header { left: 12px; }
+      .portfolio-return { top: 27px; right: 12px; gap: 7px; padding-right: 10px; font-size: 13px; }
+      .table-surface header { left: 12px; gap: 8px; }
+      .table-surface .brand-mark { width: 36px; height: 36px; }
     }
   </style>
 
@@ -788,7 +796,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="mode-transition.css">
 </head>
-<body><a class="portfolio-return" href="index.html">Back to portfolio</a>
+<body><a class="portfolio-return" href="index.html"><span aria-hidden="true">←</span>Back to portfolio</a>
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
