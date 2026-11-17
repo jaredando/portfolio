@@ -1,0 +1,61 @@
+@view-transition {
+  navigation: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(root) {
+    perspective: 1800px;
+  }
+
+  ::view-transition-image-pair(root) {
+    isolation: isolate;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    mix-blend-mode: normal;
+    animation-duration: 720ms;
+    animation-timing-function: cubic-bezier(.45, .03, .23, 1);
+    animation-fill-mode: both;
+  }
+
+  ::view-transition-old(root) {
+    z-index: 2;
+    transform-origin: left center;
+    backface-visibility: hidden;
+    animation-name: portfolio-page-turn;
+  }
+
+  ::view-transition-new(root) {
+    z-index: 1;
+    animation-name: portfolio-page-reveal;
+  }
+
+  html[data-mode="cards"]::view-transition-old(root) {
+    transform-origin: right center;
+    animation-name: portfolio-page-turn-back;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+@keyframes portfolio-page-turn {
+  from { transform: rotateY(0); filter: brightness(1); box-shadow: 0 0 0 transparent; }
+  to { transform: rotateY(-94deg); filter: brightness(.72); box-shadow: 24px 0 70px #0007; }
+}
+
+@keyframes portfolio-page-turn-back {
+  from { transform: rotateY(0); filter: brightness(1); box-shadow: 0 0 0 transparent; }
+  to { transform: rotateY(94deg); filter: brightness(.72); box-shadow: -24px 0 70px #0007; }
+}
+
+@keyframes portfolio-page-reveal {
+  from { filter: brightness(.76); }
+  to { filter: brightness(1); }
+}
