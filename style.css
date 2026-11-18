@@ -64,3 +64,4 @@ nav a { display: inline-flex; align-items: center; min-height: 44px; }
 @media (prefers-reduced-motion: no-preference) {
   .mode { animation-delay: -15s; }
 }
+footer > div { flex-wrap: wrap; }
