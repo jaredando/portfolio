@@ -779,7 +779,58 @@
     @media (max-width: 420px) {
       .portfolio-return { top: 27px; right: 12px; gap: 7px; padding-right: 10px; font-size: 13px; }
       .table-surface header { left: 12px; gap: 8px; }
-      .table-surface .brand-mark { width: 36px; height: 36px; }
+      .table-surface .brand-mark { width: 30px; height: 30px; }
+      .table-surface header h1 { font-size: 15px; }
+      .table-surface header p { display: none; }
+    }
+
+    /* The table occupies the available viewport, including changing mobile browser chrome. */
+    html, body, #root {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .table-surface {
+      height: 100dvh;
+      min-height: 0;
+    }
+    .deck-layout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      padding: max(100px, env(safe-area-inset-top)) 24px max(48px, env(safe-area-inset-bottom));
+    }
+    .deck-heading { flex: none; }
+    .deck-heading h2 { font-size: clamp(36px, 8dvh, 76px); }
+    .deck-heading > p { margin-bottom: 8px; }
+    .stage { flex: 1; min-height: 0; width: 100%; }
+    .deck-scene {
+      position: absolute;
+      inset: 0;
+      transform-origin: center;
+    }
+    .project-picker { flex: none; gap: 4px; }
+    .project-picker button { font-size: 12px; padding: 4px 10px; }
+    .deck-hint { flex: none; margin-top: 8px; }
+    .deck-hint p { margin-top: 0; }
+    .table-surface footer { bottom: max(16px, env(safe-area-inset-bottom)); left: 24px; }
+    .table-note { display: none; }
+    .detail-content { max-height: 100%; overflow-y: auto; overscroll-behavior: contain; }
+    .picked-card { max-height: calc(100dvh - 88px); }
+    @media (max-width: 420px) {
+      .deck-layout { padding-inline: 16px; padding-top: 95px; }
+      .deck-heading h2 { font-size: clamp(32px, 7dvh, 52px); }
+    }
+    @media (max-height: 500px) {
+      .deck-layout { padding-top: 72px; padding-bottom: 16px; }
+      .deck-heading, .deck-hint, .table-surface footer { display: none; }
+      .table-surface header { top: 18px; }
+      .portfolio-return { top: 18px; }
+      .table-surface header p { display: none; }
+      .project-picker { max-width: 100%; }
+      .project-picker button { font-size: 11px; padding-inline: 8px; }
     }
   </style>
 
@@ -1187,6 +1238,19 @@
       const [announcement, setAnnouncement] = useState("Project deck ready");
       const returnTimerRef = useRef(null);
 
+      const stageRef = useRef(null);
+      const [deckScale, setDeckScale] = useState(1);
+
+      useEffect(() => {
+        const observer = new ResizeObserver(([entry]) => {
+          const baseHeight = window.innerWidth < 760 ? 470 : 620;
+          setDeckScale(Math.min(1, entry.contentRect.height / baseHeight));
+        });
+        observer.observe(stageRef.current);
+        return () => observer.disconnect();
+      }, []);
+
+
       useEffect(() => {
         const pointerQuery = window.matchMedia("(hover: none), (pointer: coarse)");
         const onResize = () => setViewportWidth(window.innerWidth);
@@ -1278,8 +1342,8 @@
             </p>
           </aside>
 
-          <section className="flex min-h-[100svh] flex-col items-center justify-center px-4 pb-20 pt-28 md:px-8 md:pb-14 md:pt-24">
-            <div className="relative z-10 mb-0 text-center md:mb-[-18px]">
+          <section className="deck-layout">
+            <div className="deck-heading relative z-10 text-center">
               <p className="font-mono mb-3 text-[9px] uppercase tracking-[0.32em] text-[#d3b36a]">Selected works</p>
               <h2 className="font-card text-[52px] font-bold leading-[0.82] tracking-[-0.06em] text-[#f5edda] md:text-[76px]">
                 Pick a card.
@@ -1287,7 +1351,8 @@
               </h2>
             </div>
 
-            <div className="stage" aria-label="Project card table">
+            <div className="stage" ref={stageRef} aria-label="Project card table">
+              <div className="deck-scene" style={{ transform: `scale(${deckScale})` }}>
               <AnimatePresence>
                 {!dealt && <DealPile key="deal-pile" onDeal={dealDeck} reducedMotion={reducedMotion} hasOpened={hasOpened} />}
               </AnimatePresence>
@@ -1302,7 +1367,7 @@
                       count={projects.length}
                       current={highlightedId === project.id}
                       compact={compact}
-                      viewportWidth={viewportWidth}
+                      viewportWidth={viewportWidth / deckScale}
                       touchMode={touchMode}
                       onPick={pickUp}
                       onMakeCurrent={() => setHighlightedId(project.id)}
@@ -1314,6 +1379,8 @@
               </AnimatePresence>
             </div>
 
+            </div>
+
             {dealt && (
               <ul className="project-picker" aria-label="Choose a project by name">
                 {projects.map((project) => (
@@ -1323,7 +1390,7 @@
                 ))}
               </ul>
             )}
-            <div className="relative z-20 mt-4">
+            <div className="deck-hint relative z-20">
               {dealt ? (
                 <>
                   <p className="font-mono mobile-hint mt-4 text-center text-[8px] uppercase tracking-[0.2em] text-[#d8cdae99]">
