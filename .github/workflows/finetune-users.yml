@@ -1,0 +1,30 @@
+name: Refresh Finetune user count
+
+on:
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: finetune-user-count
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read public Chrome Web Store count
+        shell: pwsh
+        run: ./scripts/update-finetune-count.ps1
+      - name: Publish changed count
+        shell: bash
+        run: |
+          git add assets/finetune-users.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Refresh Finetune Web Store count'
+          git pull --rebase
+          git push
